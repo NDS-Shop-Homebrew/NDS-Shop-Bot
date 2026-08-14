@@ -26,7 +26,7 @@ function createDashboard(client) {
   }
 
   function guildInfo() {
-    const guild = client.guilds.cache.get(GUILD_ID);
+    const guild = client?.guilds?.cache.get(GUILD_ID) || null;
     if (!guild) return null;
     return {
       id: guild.id,
@@ -75,7 +75,7 @@ function createDashboard(client) {
 
   // ---- Salons textuels ----
   app.get("/api/channels", requireAuth, (req, res) => {
-    const guild = client.guilds.cache.get(GUILD_ID);
+    const guild = client?.guilds?.cache.get(GUILD_ID);
     if (!guild) return res.json([]);
     const chans = guild.channels.cache
       .filter((c) => c.isTextBased() && c.parentId)
@@ -125,8 +125,8 @@ function createDashboard(client) {
     const item = await prisma.botAnnouncement.findUnique({ where: { id: req.params.id } });
     if (!item) return res.status(404).json({ error: "Annonce introuvable" });
 
-    const guild = client.guilds.cache.get(GUILD_ID);
-    const channel = guild?.channels.cache.find((c) => c.name === item.channel && c.isTextBased());
+    const guild = client?.guilds?.cache.get(GUILD_ID);
+    const channel = guild?.channels?.cache.find((c) => c.name === item.channel && c.isTextBased());
     if (!channel) {
       return res.status(400).json({ error: `Salon #${item.channel} introuvable` });
     }
@@ -147,8 +147,8 @@ function createDashboard(client) {
   app.post("/api/send", requireAuth, async (req, res) => {
     const { channelId, content } = req.body;
     if (!channelId || !content) return res.status(400).json({ error: "channelId, content requis" });
-    const guild = client.guilds.cache.get(GUILD_ID);
-    const channel = guild?.channels.cache.get(channelId);
+    const guild = client?.guilds?.cache.get(GUILD_ID);
+    const channel = guild?.channels?.cache.get(channelId);
     if (!channel?.isTextBased()) return res.status(400).json({ error: "Salon invalide" });
     try {
       await channel.send({ content });
