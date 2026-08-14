@@ -1,4 +1,5 @@
 node_modules/
+frontend/dist/
 .env
 prisma/dev.db
 prisma/migrations/dev/
