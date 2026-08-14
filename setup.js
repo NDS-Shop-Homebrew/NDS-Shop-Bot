@@ -88,6 +88,11 @@ const config = {
       ],
     },
     {
+      name: "🎫 TICKETS",
+      view: ["Admin", "Modérateur", "Développeur", "Tester"],
+      channels: [{ name: "tickets-readme" }],
+    },
+    {
       name: "🤖 BOTS",
       view: ["Admin", "Modérateur", "Développeur", "Tester"],
       channels: [{ name: "bot-logs" }],

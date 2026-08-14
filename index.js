@@ -15,6 +15,8 @@ const { GUILD_ID, ROLE_MENU, ROLE_CHANNEL, ROLE_MEMBRE, ROLE_MENU_MESSAGE_ID, CH
 const { listGames } = require("./lib/api");
 const { T } = require("./lib/lang");
 const { botLog } = require("./lib/botLog");
+const { canUse, loadMatrix } = require("./lib/permissions");
+const { sendTicketMenu, createTicket, relayMessage, closeTicket } = require("./lib/tickets");
 const prisma = require("./lib/db");
 
 // ---- Chargement des commandes slash ----
@@ -172,12 +174,14 @@ async function startBot() {
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
       GatewayIntentBits.GuildMessageReactions,
+      GatewayIntentBits.DirectMessages,
     ],
     partials: [Partials.Message, Partials.Reaction, Partials.User, Partials.Channel],
   });
 
   client.once("clientReady", async () => {
     await botLog("info", `Connecté en tant que ${client.user.tag}`);
+    await loadMatrix();
     await registerSlashCommands(client);
     await postRoleMenu(client);
 
@@ -192,6 +196,20 @@ async function startBot() {
 
     await pollNewGames(client);
     setInterval(() => pollNewGames(client), pollMs);
+
+    // Rappels MP dus
+    setInterval(async () => {
+      try {
+        const due = await prisma.reminder.findMany({ where: { sent: false, dueAt: { lte: new Date() } } });
+        for (const r of due) {
+          const user = await client.users.fetch(r.discordId).catch(() => null);
+          if (user) {
+            await user.send(`⏰ **Rappel** : ${r.content}`);
+          }
+          await prisma.reminder.update({ where: { id: r.id }, data: { sent: true } });
+        }
+      } catch {}
+    }, 60 * 1000);
   });
 
   // Message de bienvenue (configurable via dashboard BotSetting welcomeMessage)
@@ -212,6 +230,28 @@ async function startBot() {
   });
 
   client.on("interactionCreate", async (interaction) => {
+    // Boutons du menu de tickets (DM)
+    if (interaction.isButton() && interaction.customId.startsWith("ticket_")) {
+      const category = interaction.customId.slice(7);
+      const catName = category.charAt(0).toUpperCase() + category.slice(1);
+      await interaction.deferUpdate().catch(() => {});
+      try {
+        const existing = await prisma.ticket.findFirst({ where: { userId: interaction.user.id, status: "open" } });
+        if (existing) {
+          return interaction.user.send("📌 Vous avez déjà un ticket ouvert.");
+        }
+        const ticket = await createTicket(client, interaction.user, catName);
+        if (ticket) {
+          await interaction.user.send(`✅ Votre ticket **${catName}** a été ouvert. Écrivez ici, l'équipe vous répondra !`);
+        } else {
+          await interaction.user.send("❌ Impossible de créer le ticket (catégorie manquante ?).");
+        }
+      } catch (err) {
+        await botLog("error", `Ticket button: ${err.message}`);
+      }
+      return;
+    }
+
     if (interaction.isAutocomplete()) {
       const cmd = commands.get(interaction.commandName);
       if (cmd?.autocomplete) {
@@ -224,6 +264,32 @@ async function startBot() {
     if (!interaction.isChatInputCommand()) return;
     const cmd = commands.get(interaction.commandName);
     if (!cmd) return;
+
+    // Blacklist globale
+    try {
+      const bl = await prisma.blacklist.findUnique({ where: { discordId: interaction.user.id } });
+      if (bl) {
+        return interaction.reply({ content: "🚫 Vous êtes banni de l'utilisation du bot.", ephemeral: true });
+      }
+    } catch {}
+
+    // Permission par rôle
+    const allowed = await canUse(interaction.member, interaction.commandName);
+    if (!allowed) {
+      await botLog("warn", `${interaction.user.tag} a tenté /${interaction.commandName} sans permission`);
+      return interaction.reply({ content: "⛔ Vous n'avez pas la permission d'utiliser cette commande.", ephemeral: true });
+    }
+
+    // Log de la commande
+    try {
+      const opts = interaction.options.data
+        .map((o) => `${o.name}=${typeof o.value === "string" ? o.value.slice(0, 50) : o.value}`)
+        .join(" ");
+      await prisma.botCommandLog.create({
+        data: { userId: interaction.user.id, username: interaction.user.username, command: interaction.commandName, options: opts || null },
+      });
+    } catch {}
+
     try {
       await cmd.execute(interaction);
     } catch (err) {
@@ -232,6 +298,45 @@ async function startBot() {
         await interaction.reply({ content: "❌ Une erreur est survenue.", ephemeral: true });
       }
     }
+  });
+
+  // Relais DM <-> thread de ticket
+  client.on("messageCreate", async (message) => {
+    if (message.author.bot) return;
+    if (message.channel.isDMBased()) {
+      // Message du user en DM
+      if (message.content?.trim()) {
+        const handled = await relayMessage(client, message.channel, message.author, message.content, true);
+        if (!handled) {
+          // Aucun ticket ouvert -> propose le menu
+          try {
+            await sendTicketMenu(message.author);
+          } catch {}
+        }
+      }
+      return;
+    }
+    // Message dans un salon de ticket (thread) -> relais vers le DM du user
+    const ticket = await prisma.ticket.findFirst({ where: { threadId: message.channel.id, status: "open" } });
+    if (ticket && message.content?.trim()) {
+      await relayMessage(client, message.channel, message.author, message.content, false);
+      return;
+    }
+
+    // Leveling : XP sur les messages dans les salons
+    try {
+      const lvlCfg = require("./lib/leveling").getConfig;
+      const cfg = await lvlCfg();
+      if (cfg.enabled && !message.channel.isDMBased()) {
+        if (!cfg.excludedChannels?.includes(message.channel.name)) {
+          const { grantXp } = require("./lib/leveling");
+          const result = await grantXp(message.author.id, message.guild);
+          if (result) {
+            await message.channel.send(`🎉 <@${message.author.id}> est passé **niveau ${result.newLevel}** !`).catch(() => {});
+          }
+        }
+      }
+    } catch {}
   });
 
   client.on("messageReactionAdd", async (reaction, user) => {

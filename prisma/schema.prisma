@@ -108,3 +108,95 @@ model BotLog {
 
   @@map("bot_log")
 }
+
+model Ticket {
+  id         String          @id @default(cuid())
+  userId     String          @db.Text
+  username   String?         @db.Text
+  category   String          @db.Text
+  threadId   String?         @db.Text
+  status     String          @default("open")
+  createdAt  DateTime        @default(now())
+  closedAt   DateTime?
+  messages   TicketMessage[]
+
+  @@map("bot_ticket")
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String   @db.Text
+  author    String   @db.Text
+  content   String   @db.Text
+  direction String   @default("user")
+  createdAt DateTime @default(now())
+
+  @@map("bot_ticket_message")
+}
+
+model UserProfile {
+  id           String    @id @default(cuid())
+  discordId    String    @unique
+  xp           BigInt    @default(0)
+  level        Int       @default(1)
+  favorites    String?   @db.Text
+  watched      String?   @db.Text
+  lastXpAt     DateTime?
+  totalMsgs    Int       @default(0)
+  badge        String?   @db.Text
+  updatedAt    DateTime  @updatedAt
+
+  @@map("bot_user_profile")
+}
+
+model GameSub {
+  id        String @id @default(cuid())
+  discordId String @unique
+  games     String @db.Text
+
+  @@map("bot_game_sub")
+}
+
+model Reminder {
+  id        String    @id @default(cuid())
+  discordId String    @db.Text
+  content   String    @db.Text
+  channelId String?   @db.Text
+  dueAt     DateTime
+  sent      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@map("bot_reminder")
+}
+
+model BotCommandLog {
+  id        String    @id @default(cuid())
+  userId    String    @db.Text
+  username  String?   @db.Text
+  command   String    @db.Text
+  options   String?   @db.Text
+  createdAt DateTime  @default(now())
+
+  @@map("bot_command_log")
+}
+
+model Blacklist {
+  id        String    @id @default(cuid())
+  discordId String    @unique
+  reason    String?   @db.Text
+  createdAt DateTime  @default(now())
+
+  @@map("bot_blacklist")
+}
+
+model Warn {
+  id        String    @id @default(cuid())
+  discordId String    @db.Text
+  modId     String?   @db.Text
+  reason    String?   @db.Text
+  createdAt DateTime  @default(now())
+
+  @@map("bot_warn")
+}

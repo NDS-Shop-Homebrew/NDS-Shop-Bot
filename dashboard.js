@@ -187,14 +187,125 @@ function createDashboard(client) {
 
   // ---- Déclenchement manuel du poll de nouveaux jeux ----
   app.post("/api/poll", requireAuth, async (_req, res) => {
-    const { pollNewGames } = require("./index");
-    // Re-expose via client property set by server.js
     if (typeof client.pollNow === "function") {
       await client.pollNow();
       res.json({ ok: true });
     } else {
       res.status(400).json({ error: "Poll non disponible" });
     }
+  });
+
+  // ---- Tickets (staff) ----
+  app.get("/api/tickets", requireAuth, async (req, res) => {
+    const status = req.query.status || "all";
+    const where = status === "all" ? {} : { status };
+    const tickets = await prisma.ticket.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: { messages: { orderBy: { createdAt: "asc" }, take: 50 } },
+    });
+    res.json(tickets);
+  });
+
+  app.post("/api/tickets/:id/reply", requireAuth, async (req, res) => {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: "content requis" });
+    const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id } });
+    if (!ticket) return res.status(404).json({ error: "Ticket introuvable" });
+    await prisma.ticketMessage.create({
+      data: { ticketId: ticket.id, authorId: req.user.id, author: req.user.username, content, direction: "staff" },
+    });
+    const user = await client?.users?.fetch(ticket.userId).catch(() => null);
+    if (user) await user.send(`**${req.user.username}** : ${content}`);
+    await botLog("info", `Réponse staff au ticket ${ticket.id}`);
+    res.json({ ok: true });
+  });
+
+  app.post("/api/tickets/:id/close", requireAuth, async (req, res) => {
+    const { closeTicket } = require("./lib/tickets");
+    await closeTicket(client, req.params.id, req.user.username);
+    res.json({ ok: true });
+  });
+
+  app.post("/api/tickets/:id/reopen", requireAuth, async (req, res) => {
+    await prisma.ticket.update({ where: { id: req.params.id }, data: { status: "open", closedAt: null } });
+    res.json({ ok: true });
+  });
+
+  // ---- Users (profils bot) ----
+  app.get("/api/users", requireAuth, async (req, res) => {
+    const search = String(req.query.search || "");
+    const profiles = await prisma.userProfile.findMany({ orderBy: { xp: "desc" }, take: 100 });
+    const guild = client?.guilds?.cache.get(GUILD_ID);
+    const out = [];
+    for (const p of profiles) {
+      if (search && !p.discordId.includes(search)) continue;
+      const member = guild?.members?.cache.get(p.discordId);
+      out.push({
+        discordId: p.discordId,
+        username: member?.user?.username || p.discordId,
+        xp: Number(p.xp),
+        level: p.level,
+        totalMsgs: p.totalMsgs,
+        favorites: p.favorites ? JSON.parse(p.favorites) : [],
+      });
+    }
+    res.json(out);
+  });
+
+  // ---- Leveling config ----
+  app.get("/api/leveling", requireAuth, async (_req, res) => {
+    const row = await prisma.botSetting.findUnique({ where: { key: "levelingConfig" } });
+    res.json(row?.value ? JSON.parse(row.value) : { enabled: true, xpPerMessage: 15, excludedChannels: [], roles: [] });
+  });
+
+  app.put("/api/leveling", requireAuth, async (req, res) => {
+    await prisma.botSetting.upsert({
+      where: { key: "levelingConfig" },
+      update: { value: JSON.stringify(req.body) },
+      create: { key: "levelingConfig", value: JSON.stringify(req.body) },
+    });
+    res.json({ ok: true });
+  });
+
+  // ---- Permissions matrix ----
+  app.get("/api/permissions", requireAuth, async (_req, res) => {
+    const { getMatrix, ROLE_ORDER } = require("./lib/permissions");
+    res.json({ matrix: await getMatrix(), roles: ROLE_ORDER });
+  });
+
+  app.put("/api/permissions", requireAuth, async (req, res) => {
+    const { saveMatrix } = require("./lib/permissions");
+    await saveMatrix(req.body.matrix || {});
+    res.json({ ok: true });
+  });
+
+  // ---- Commandes log ----
+  app.get("/api/commands", requireAuth, async (req, res) => {
+    const limit = Math.min(Number(req.query.limit || 100), 500);
+    const logs = await prisma.botCommandLog.findMany({ orderBy: { createdAt: "desc" }, take: limit });
+    res.json(logs);
+  });
+
+  // ---- Blacklist ----
+  app.get("/api/blacklist", requireAuth, async (_req, res) => {
+    res.json(await prisma.blacklist.findMany({ orderBy: { createdAt: "desc" } }));
+  });
+
+  app.post("/api/blacklist", requireAuth, async (req, res) => {
+    const { discordId, reason } = req.body;
+    if (!discordId) return res.status(400).json({ error: "discordId requis" });
+    await prisma.blacklist.upsert({
+      where: { discordId },
+      update: { reason: reason || null },
+      create: { discordId, reason: reason || null },
+    });
+    res.json({ ok: true });
+  });
+
+  app.delete("/api/blacklist/:discordId", requireAuth, async (req, res) => {
+    await prisma.blacklist.delete({ where: { discordId: req.params.discordId } }).catch(() => {});
+    res.json({ ok: true });
   });
 
   return app;
