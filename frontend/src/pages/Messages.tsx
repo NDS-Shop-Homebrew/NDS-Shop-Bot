@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -32,8 +32,21 @@ export default function Messages() {
   // nouveau MP
   const [members, setMembers] = useState<Member[]>([]);
   const [memberQuery, setMemberQuery] = useState("");
+  const [memberOpen, setMemberOpen] = useState(false);
   const [newTarget, setNewTarget] = useState<Member | null>(null);
   const [newMsg, setNewMsg] = useState("");
+  const memberBoxRef = useRef<HTMLDivElement | null>(null);
+
+  // Ferme la liste au clic extérieur
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (memberBoxRef.current && !memberBoxRef.current.contains(e.target as Node)) {
+        setMemberOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
 
   const loadContacts = async () => {
     try {
@@ -68,13 +81,21 @@ export default function Messages() {
     } catch {}
   };
 
-  const searchMembers = async (q: string) => {
-    setMemberQuery(q);
+  // Charge la liste des membres une fois puis filtre localement
+  const openMemberSearch = async () => {
+    setMemberOpen(true);
+    if (members.length) return;
     try {
-      const m = await api<Member[]>(`/api/members?search=${encodeURIComponent(q)}`);
+      const m = await api<Member[]>("/api/members?search=");
       setMembers(m);
     } catch {}
   };
+
+  const filteredMembers = members.filter((m) => {
+    const q = memberQuery.trim().toLowerCase();
+    if (!q) return true;
+    return m.username.toLowerCase().includes(q) || m.display.toLowerCase().includes(q) || m.id.includes(q);
+  });
 
   const sendNew = async () => {
     if (!newTarget || !newMsg.trim()) return;
@@ -156,21 +177,24 @@ export default function Messages() {
 
           {/* Barre de recherche + liste des membres */}
           {!newTarget && (
-            <div className="relative">
+            <div ref={memberBoxRef} className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
               <Input
                 value={memberQuery}
-                onChange={(e) => searchMembers(e.target.value)}
-                onFocus={() => searchMembers(memberQuery)}
+                onChange={(e) => { setMemberQuery(e.target.value); setMemberOpen(true); }}
+                onFocus={openMemberSearch}
                 placeholder="Rechercher un membre du serveur…"
                 className="pl-9"
               />
-              {members.length > 0 && (
+              {memberOpen && (
                 <div className="absolute z-30 mt-2 w-full max-h-64 overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
-                  {members.map((m) => (
+                  {filteredMembers.length === 0 && (
+                    <p className="p-3 text-sm text-muted-foreground">Aucun membre trouvé.</p>
+                  )}
+                  {filteredMembers.map((m) => (
                     <button
                       key={m.id}
-                      onClick={() => { setNewTarget(m); setMembers([]); }}
+                      onClick={() => { setNewTarget(m); setMembers([]); setMemberOpen(false); }}
                       className="w-full flex items-center gap-3 p-2.5 hover:bg-muted transition-colors text-left"
                     >
                       <img src={m.avatar} alt="" className="w-8 h-8 rounded-full shrink-0" />

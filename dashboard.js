@@ -352,11 +352,12 @@ function createDashboard(client) {
     const out = [];
     for (const [, m] of members) {
       if (m.user.bot) continue;
-      const name = m.user.username.toLowerCase();
+      const name = (m.user.username + " " + (m.displayName || "")).toLowerCase();
       if (q && !name.includes(q) && !m.user.id.includes(q)) continue;
       out.push({ id: m.user.id, username: m.user.username, display: m.displayName || m.user.username, avatar: m.user.displayAvatarURL() });
-      if (out.length >= 30) break;
+      if (out.length >= 200) break;
     }
+    out.sort((a, b) => a.display.localeCompare(b.display));
     res.json(out);
   });
 
