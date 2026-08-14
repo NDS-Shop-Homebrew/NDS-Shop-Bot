@@ -201,7 +201,7 @@ async function loadGames(q) {
     const games = await api("/api/games?search=" + encodeURIComponent(q || ""));
     const list = $("gamesList");
     list.innerHTML = "";
-    games.slice(0, 24).forEach((g) => {
+    games.forEach((g) => {
       const div = document.createElement("div");
       div.className = "bg-slate-900 rounded-xl p-4 border border-slate-800 flex items-center gap-3";
       div.innerHTML = `

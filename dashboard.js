@@ -67,7 +67,7 @@ function createDashboard(client) {
           (g) => g.title.toLowerCase().includes(q) || (g.author || "").toLowerCase().includes(q)
         );
       }
-      res.json(games.slice(0, 50));
+      res.json(games.slice(0, 200));
     } catch {
       res.json([]);
     }
