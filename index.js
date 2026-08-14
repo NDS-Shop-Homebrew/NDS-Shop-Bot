@@ -60,16 +60,57 @@ async function postRoleMenu(client) {
         "\n\n_Retirez votre réaction pour changer de langue / Remove your reaction to switch._"
     );
 
-  let message;
-  if (ROLE_MENU_MESSAGE_ID) {
+  // Cherche en base l'ID sauvegardé
+  let savedId = ROLE_MENU_MESSAGE_ID;
+  if (!savedId) {
     try {
-      message = await channel.messages.fetch(ROLE_MENU_MESSAGE_ID);
+      const row = await prisma.botSetting.findUnique({ where: { key: "roleMenuMessageId" } });
+      if (row?.value) savedId = row.value;
     } catch {}
   }
+
+  // Réutilise le message existant
+  let message;
+  if (savedId) {
+    try {
+      message = await channel.messages.fetch(savedId);
+    } catch {}
+  }
+
+  // Cherche un message du bot avec le même titre dans le salon (fallback)
+  if (!message) {
+    const messages = await channel.messages.fetch({ limit: 50 });
+    const botMsg = messages.find((m) => m.author.id === client.user.id && m.embeds?.[0]?.title === "Choix de langue / Language selection");
+    if (botMsg) {
+      message = botMsg;
+      savedId = message.id;
+    }
+  }
+
+  // Supprime les doublons (tous les autres messages du bot avec ce titre dans le salon)
+  const allMsgs = await channel.messages.fetch({ limit: 50 });
+  const dupes = allMsgs.filter((m) => m.id !== message?.id && m.author.id === client.user.id && m.embeds?.[0]?.title === "Choix de langue / Language selection");
+  for (const d of dupes.values()) {
+    try { await d.delete(); } catch {}
+  }
+
   if (!message) {
     message = await channel.send({ embeds: [menuEmbed] });
-    await botLog("info", `Menu posté dans #${channel.name} (id: ${message.id})`);
+    savedId = message.id;
+    await botLog("info", `Menu posté dans #${channel.name} (id: ${savedId})`);
   }
+
+  // Sauvegarde l'ID en base
+  try {
+    if (savedId) {
+      await prisma.botSetting.upsert({
+        where: { key: "roleMenuMessageId" },
+        update: { value: savedId },
+        create: { key: "roleMenuMessageId", value: savedId },
+      });
+    }
+  } catch {}
+
   for (const emoji of Object.keys(ROLE_MENU)) {
     await message.react(emoji).catch(() => {});
   }

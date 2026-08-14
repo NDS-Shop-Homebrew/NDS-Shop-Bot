@@ -8,6 +8,7 @@ const prisma = require("./lib/db");
 const { botLog } = require("./lib/botLog");
 const { listGames } = require("./lib/api");
 const { GUILD_ID, CHANNELS } = require("./config");
+const { resolveMentions } = require("./lib/mentions");
 
 function createDashboard(client) {
   const app = express();
@@ -134,7 +135,8 @@ function createDashboard(client) {
       return res.status(400).json({ error: `Salon #${item.channel} introuvable` });
     }
     try {
-      await channel.send({ content: item.content });
+      const { resolveMentions } = require("./lib/mentions");
+      await channel.send({ content: await resolveMentions(client, item.content) });
     } catch (err) {
       return res.status(500).json({ error: `Envoi échoué : ${err.message}` });
     }
@@ -154,7 +156,9 @@ function createDashboard(client) {
     const channel = guild?.channels?.cache.get(channelId);
     if (!channel?.isTextBased()) return res.status(400).json({ error: "Salon invalide" });
     try {
-      await channel.send({ content });
+      const { resolveMentions } = require("./lib/mentions");
+      const resolved = await resolveMentions(client, content);
+      await channel.send({ content: resolved });
       await botLog("info", `Message envoyé par ${req.user.username} -> #${channel.name}`);
       res.json({ ok: true });
     } catch (err) {
@@ -335,7 +339,9 @@ function createDashboard(client) {
     if (!userId || !content) return res.status(400).json({ error: "userId, content requis" });
     const { recordOutgoing } = require("./lib/dm");
     try {
-      await recordOutgoing(client, userId, content, { id: req.user.id, username: req.user.username });
+      const { resolveMentions } = require("./lib/mentions");
+      const resolved = await resolveMentions(client, content);
+      await recordOutgoing(client, userId, resolved, { id: req.user.id, username: req.user.username });
       await botLog("info", `${req.user.username} a envoyé un MP à ${userId}`);
       res.json({ ok: true });
     } catch (err) {
