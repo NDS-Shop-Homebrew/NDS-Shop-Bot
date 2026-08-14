@@ -70,7 +70,6 @@ export default function Messages() {
 
   const searchMembers = async (q: string) => {
     setMemberQuery(q);
-    if (q.trim().length < 2) { setMembers([]); return; }
     try {
       const m = await api<Member[]>(`/api/members?search=${encodeURIComponent(q)}`);
       setMembers(m);
@@ -142,35 +141,60 @@ export default function Messages() {
       <Card className="lg:col-span-3">
         <CardContent className="p-4 space-y-3">
           <h2 className="font-semibold flex items-center gap-2"><Mail size={16} /> Nouveau message privé</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+          {/* Destinataire sélectionné */}
+          {newTarget && (
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-primary bg-secondary">
+              <img src={newTarget.avatar} alt="" className="w-10 h-10 rounded-full" />
+              <div className="flex-1">
+                <p className="font-semibold text-sm">{newTarget.display}</p>
+                <p className="text-xs text-muted-foreground">@{newTarget.username} · <Badge variant="accent">Membre du serveur</Badge></p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setNewTarget(null)}>✕ Changer</Button>
+            </div>
+          )}
+
+          {/* Barre de recherche + liste des membres */}
+          {!newTarget && (
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-              <Input value={memberQuery} onChange={(e) => searchMembers(e.target.value)} placeholder="Rechercher un membre…" className="pl-9" />
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {newTarget && (
-                <Badge variant="secondary" className="cursor-pointer" onClick={() => setNewTarget(null)}>
-                  {newTarget.username} ✕
-                </Badge>
-              )}
-              {members.length > 0 && !newTarget && (
-                <select
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                  onChange={(e) => {
-                    const m = members.find((x) => x.id === e.target.value);
-                    if (m) setNewTarget(m);
-                    setMembers([]);
-                  }}
-                  defaultValue=""
-                >
-                  <option value="" disabled>Choisir…</option>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+              <Input
+                value={memberQuery}
+                onChange={(e) => searchMembers(e.target.value)}
+                onFocus={() => searchMembers(memberQuery)}
+                placeholder="Rechercher un membre du serveur…"
+                className="pl-9"
+              />
+              {members.length > 0 && (
+                <div className="absolute z-30 mt-2 w-full max-h-64 overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
                   {members.map((m) => (
-                    <option key={m.id} value={m.id}>{m.username} ({m.display})</option>
+                    <button
+                      key={m.id}
+                      onClick={() => { setNewTarget(m); setMembers([]); }}
+                      className="w-full flex items-center gap-3 p-2.5 hover:bg-muted transition-colors text-left"
+                    >
+                      <img src={m.avatar} alt="" className="w-8 h-8 rounded-full shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{m.display}</p>
+                        <p className="text-xs text-muted-foreground truncate">@{m.username}</p>
+                      </div>
+                      <Badge variant="outline" className="ml-auto shrink-0 text-[10px]">Serveur</Badge>
+                    </button>
                   ))}
-                </select>
+                </div>
               )}
             </div>
-            <Input value={newMsg} onChange={(e) => setNewMsg(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendNew()} placeholder="Message…" disabled={!newTarget} />
+          )}
+
+          {/* Message */}
+          <div className="flex gap-2">
+            <Input
+              value={newMsg}
+              onChange={(e) => setNewMsg(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendNew()}
+              placeholder={newTarget ? `Message pour ${newTarget.display}…` : "Choisissez d'abord un destinataire…"}
+              disabled={!newTarget}
+            />
             <Button onClick={sendNew} disabled={!newTarget || !newMsg.trim()}><Send size={15} /> Envoyer</Button>
           </div>
         </CardContent>
