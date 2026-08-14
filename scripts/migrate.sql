@@ -87,3 +87,28 @@ CREATE TABLE IF NOT EXISTS `bot_warn` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `bot_dm_contact` (
+    `id` VARCHAR(191) NOT NULL,
+    `discordId` VARCHAR(191) NOT NULL,
+    `username` TEXT NOT NULL,
+    `lastMessage` TEXT NULL,
+    `lastAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `unreadCount` INTEGER NOT NULL DEFAULT 0,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    UNIQUE INDEX `bot_dm_contact_discordId_key`(`discordId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `bot_dm_message` (
+    `id` VARCHAR(191) NOT NULL,
+    `contactId` VARCHAR(191) NOT NULL,
+    `direction` VARCHAR(191) NOT NULL DEFAULT 'user',
+    `authorId` TEXT NOT NULL,
+    `author` TEXT NOT NULL,
+    `content` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (`id`),
+    CONSTRAINT `bot_dm_message_contactId_fkey` FOREIGN KEY (`contactId`) REFERENCES `bot_dm_contact`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

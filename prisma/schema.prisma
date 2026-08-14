@@ -200,3 +200,30 @@ model Warn {
 
   @@map("bot_warn")
 }
+
+model BotDmContact {
+  id          String         @id @default(cuid())
+  discordId   String         @unique
+  username    String         @db.Text
+  lastMessage String?        @db.Text
+  lastAt      DateTime       @default(now())
+  unreadCount Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  messages    BotDmMessage[]
+
+  @@map("bot_dm_contact")
+}
+
+model BotDmMessage {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   BotDmContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  direction String   @default("user") // user | staff
+  authorId  String   @db.Text
+  author    String   @db.Text
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@map("bot_dm_message")
+}

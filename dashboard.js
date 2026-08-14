@@ -190,11 +190,15 @@ function createDashboard(client) {
 
   // ---- Déclenchement manuel du poll de nouveaux jeux ----
   app.post("/api/poll", requireAuth, async (_req, res) => {
-    if (typeof client.pollNow === "function") {
-      await client.pollNow();
-      res.json({ ok: true });
-    } else {
-      res.status(400).json({ error: "Poll non disponible" });
+    try {
+      if (typeof client?.pollNow === "function") {
+        await client.pollNow();
+        res.json({ ok: true });
+      } else {
+        res.status(400).json({ error: "Bot hors ligne — poll indisponible" });
+      }
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   });
 
@@ -309,6 +313,51 @@ function createDashboard(client) {
   app.delete("/api/blacklist/:discordId", requireAuth, async (req, res) => {
     await prisma.blacklist.delete({ where: { discordId: req.params.discordId } }).catch(() => {});
     res.json({ ok: true });
+  });
+
+  // ---- Messages privés (DM) ----
+  app.get("/api/dm/contacts", requireAuth, async (_req, res) => {
+    const { listContacts } = require("./lib/dm");
+    res.json(await listContacts());
+  });
+
+  app.get("/api/dm/contacts/:userId/messages", requireAuth, async (req, res) => {
+    const { thread, markRead } = require("./lib/dm");
+    const data = await thread(req.params.userId);
+    if (!data) return res.json({ contact: null, messages: [] });
+    await markRead(req.params.userId).catch(() => {});
+    res.json(data);
+  });
+
+  // Envoyer un MP (nouveau ou réponse) + enregistré
+  app.post("/api/dm", requireAuth, async (req, res) => {
+    const { userId, content } = req.body;
+    if (!userId || !content) return res.status(400).json({ error: "userId, content requis" });
+    const { recordOutgoing } = require("./lib/dm");
+    try {
+      await recordOutgoing(client, userId, content, { id: req.user.id, username: req.user.username });
+      await botLog("info", `${req.user.username} a envoyé un MP à ${userId}`);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: `Envoi échoué : ${err.message}` });
+    }
+  });
+
+  // Liste des membres du serveur (pour choisir le destinataire d'un MP)
+  app.get("/api/members", requireAuth, async (req, res) => {
+    const guild = client?.guilds?.cache.get(GUILD_ID);
+    if (!guild) return res.json([]);
+    const q = String(req.query.search || "").toLowerCase();
+    const members = await guild.members.fetch().catch(() => new Map());
+    const out = [];
+    for (const [, m] of members) {
+      if (m.user.bot) continue;
+      const name = m.user.username.toLowerCase();
+      if (q && !name.includes(q) && !m.user.id.includes(q)) continue;
+      out.push({ id: m.user.id, username: m.user.username, display: m.displayName || m.user.username, avatar: m.user.displayAvatarURL() });
+      if (out.length >= 30) break;
+    }
+    res.json(out);
   });
 
   return app;

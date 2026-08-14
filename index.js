@@ -306,6 +306,9 @@ async function startBot() {
     if (message.channel.isDMBased()) {
       // Message du user en DM
       if (message.content?.trim()) {
+        // Trace la conversation (qui a contacté le bot)
+        const { recordIncoming } = require("./lib/dm");
+        await recordIncoming(message.author, message.content).catch(() => {});
         const handled = await relayMessage(client, message.channel, message.author, message.content, true);
         if (!handled) {
           // Aucun ticket ouvert -> propose le menu

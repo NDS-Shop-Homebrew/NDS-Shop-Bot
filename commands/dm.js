@@ -1,5 +1,6 @@
-// /dm <user> <message> — réponse directe en MP
+// /dm <user> <message> — réponse directe en MP (traçée)
 const { SlashCommandBuilder } = require("discord.js");
+const { recordOutgoing } = require("../lib/dm");
 const { botLog } = require("../lib/botLog");
 
 module.exports = {
@@ -13,11 +14,11 @@ module.exports = {
     const target = interaction.options.getUser("user");
     const message = interaction.options.getString("message");
     try {
-      await target.send(`**${interaction.user.username}** : ${message}`);
+      await recordOutgoing(interaction.client, target.id, message, { id: interaction.user.id, username: interaction.user.username });
       await botLog("info", `${interaction.user.tag} a envoyé un MP à ${target.username}`);
       await interaction.reply({ content: `✅ MP envoyé à ${target.username}.`, ephemeral: true });
-    } catch {
-      await interaction.reply("❌ Impossible d'envoyer un MP à cet utilisateur (MP fermés ?).");
+    } catch (err) {
+      await interaction.reply(`❌ Impossible d'envoyer un MP : ${err.message}`);
     }
   },
 };

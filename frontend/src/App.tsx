@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Ticket, Megaphone, Gamepad2, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages } from "lucide-react";
+import { LayoutDashboard, Ticket, Megaphone, Gamepad2, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages, MessageSquare } from "lucide-react";
 import { UIProvider, useUI } from "./context/UIContext";
 import { api, logout } from "./lib/api";
 import { cn } from "./lib/utils";
@@ -11,11 +11,12 @@ import Announcements from "./pages/Announcements";
 import Games from "./pages/Games";
 import Users from "./pages/Users";
 import Permissions from "./pages/Permissions";
+import Messages from "./pages/Messages";
 import Send from "./pages/Send";
 import Logs from "./pages/Logs";
 import Settings from "./pages/Settings";
 
-type Tab = "overview" | "tickets" | "announcements" | "games" | "users" | "permissions" | "send" | "logs" | "settings";
+type Tab = "overview" | "tickets" | "announcements" | "games" | "users" | "permissions" | "messages" | "send" | "logs" | "settings";
 
 const TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "overview", icon: LayoutDashboard, key: "nav.overview" },
@@ -24,6 +25,7 @@ const TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "games", icon: Gamepad2, key: "nav.games" },
   { id: "users", icon: UsersIcon, key: "nav.users" },
   { id: "permissions", icon: ShieldCheck, key: "nav.permissions" },
+  { id: "messages", icon: MessageSquare, key: "nav.messages" },
   { id: "send", icon: SendIcon, key: "nav.send" },
   { id: "logs", icon: ScrollText, key: "nav.logs" },
   { id: "settings", icon: SettingsIcon, key: "nav.settings" },
@@ -94,6 +96,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {tab === "games" && <Games />}
           {tab === "users" && <Users />}
           {tab === "permissions" && <Permissions />}
+          {tab === "messages" && <Messages />}
           {tab === "send" && <Send />}
           {tab === "logs" && <Logs />}
           {tab === "settings" && <Settings />}

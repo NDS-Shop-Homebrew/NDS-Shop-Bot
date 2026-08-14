@@ -9,6 +9,7 @@ const DICT: Record<string, { fr: string; en: string }> = {
   "nav.games": { fr: "Jeux", en: "Games" },
   "nav.users": { fr: "Utilisateurs", en: "Users" },
   "nav.permissions": { fr: "Permissions", en: "Permissions" },
+  "nav.messages": { fr: "Messages", en: "Messages" },
   "nav.send": { fr: "Envoyer", en: "Send" },
   "nav.logs": { fr: "Logs", en: "Logs" },
   "nav.settings": { fr: "Réglages", en: "Settings" },

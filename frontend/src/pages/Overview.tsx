@@ -3,7 +3,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { useUI } from "../context/UIContext";
 import { api, type StatusData } from "../lib/api";
-import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock } from "lucide-react";
+import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock, MessageSquare } from "lucide-react";
 
 export default function Overview() {
   const { t } = useUI();
@@ -11,6 +11,7 @@ export default function Overview() {
   const [openTickets, setOpenTickets] = useState<number>(0);
   const [commands, setCommands] = useState<number>(0);
   const [blacklist, setBlacklist] = useState<number>(0);
+  const [dms, setDms] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -21,6 +22,7 @@ export default function Overview() {
       try { setOpenTickets((await api<any[]>("/api/tickets?status=open")).length); } catch {}
       try { setCommands((await api<any[]>("/api/commands?limit=100")).length); } catch {}
       try { setBlacklist((await api<any[]>("/api/blacklist")).length); } catch {}
+      try { setDms((await api<any[]>("/api/dm/contacts")).filter((c) => c.unreadCount > 0).length); } catch {}
     } catch {
       setStatus(null);
     } finally {
@@ -39,6 +41,7 @@ export default function Overview() {
     { icon: Gamepad2, label: t("overview.games"), value: status?.games ?? "—" },
     { icon: Ticket, label: t("overview.openTickets"), value: openTickets },
     { icon: Command, label: t("overview.commands24"), value: commands },
+    { icon: MessageSquare, label: "MP non lus", value: dms },
     { icon: ShieldBan, label: t("overview.blacklist"), value: blacklist },
     { icon: Clock, label: t("overview.uptime"), value: uptime ? `${Math.floor(uptime / 86400)}j ${Math.floor((uptime % 86400) / 3600)}h` : "—" },
   ];
