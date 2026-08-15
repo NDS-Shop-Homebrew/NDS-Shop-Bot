@@ -409,4 +409,4 @@ async function startBot() {
   return client;
 }
 
-module.exports = { startBot, refreshGamesCache, gamesCache: () => gamesCache };
+module.exports = { startBot, refreshGamesCache, pollNewGames, gamesCache: () => gamesCache };
