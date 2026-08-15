@@ -1,4 +1,4 @@
-// /rank — niveau et XP du membre
+// /rank — niveau et XP du membre avec barre de progression
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const prisma = require("../lib/db");
 const { xpForLevel } = require("../lib/leveling");
@@ -21,19 +21,20 @@ module.exports = {
     const cur = Number(profile.xp);
     const curLevelXp = xpForLevel(profile.level);
     const nextLevelXp = xpForLevel(profile.level + 1);
-    const pct = Math.min(100, Math.round(((cur - curLevelXp) / (nextLevelXp - curLevelXp)) * 100));
+    const pct = Math.min(100, Math.max(0, Math.round(((cur - curLevelXp) / (nextLevelXp - curLevelXp)) * 100)));
+    const bar = "█".repeat(Math.floor(pct / 10)) + "░".repeat(10 - Math.floor(pct / 10));
 
     const embed = new EmbedBuilder()
       .setColor("#5865F2")
-      .setTitle(interaction.user.username)
+      .setTitle(`${interaction.user.username} — ${lang === "fr" ? "Niveau" : "Level"} ${profile.level}`)
       .setThumbnail(interaction.user.displayAvatarURL())
+      .setDescription(`**${bar}** ${pct}%`)
       .addFields(
-        { name: lang === "fr" ? "Niveau" : "Level", value: `**${profile.level}**`, inline: true },
-        { name: "XP", value: `${cur}`, inline: true },
-        { name: lang === "fr" ? "Messages" : "Messages", value: `${profile.totalMsgs}`, inline: true }
+        { name: "⭐ " + (lang === "fr" ? "Niveau" : "Level"), value: `**${profile.level}**`, inline: true },
+        { name: "✨ XP", value: `${cur} / ${nextLevelXp}`, inline: true },
+        { name: "💬 " + (lang === "fr" ? "Messages" : "Messages"), value: `${profile.totalMsgs}`, inline: true },
       )
-      .setDescription(`▰▱`.repeat(0) + `Progression vers niveau ${profile.level + 1} : **${pct}%**`)
-      .setFooter({ text: `XP: ${cur} / ${nextLevelXp}` });
+      .setFooter({ text: `XP totale : ${cur}` });
     await interaction.reply({ embeds: [embed] });
   },
 };

@@ -1,7 +1,6 @@
-// /leaderboard — top XP
+// /leaderboard — top XP avec médailles
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const prisma = require("../lib/db");
-const { T, detectLang } = require("../lib/lang");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,8 +8,7 @@ module.exports = {
     .setDescription("Top XP / XP leaderboard"),
 
   async execute(interaction) {
-    const lang = detectLang(interaction.member);
-    const t = T[lang];
+    const lang = interaction.member?.roles?.cache?.some((r) => r.name === "English") ? "en" : "fr";
     const top = await prisma.userProfile.findMany({
       orderBy: { xp: "desc" },
       take: 10,
@@ -18,17 +16,17 @@ module.exports = {
     if (!top.length) {
       return interaction.reply(lang === "fr" ? "Pas encore de classement !" : "No leaderboard yet!");
     }
+    const medals = ["🥇", "🥈", "🥉"];
     const embed = new EmbedBuilder()
       .setColor("#F1C40F")
       .setTitle(lang === "fr" ? "🏆 Classement XP" : "🏆 XP Leaderboard")
+      .setThumbnail("https://db-nds-shop.fr/logo.png")
       .setDescription(
         top
-          .map(
-            (p, i) =>
-              `${["🥇", "🥈", "🥉"][i] || `${i + 1}.`} **<@${p.discordId}>** — niveau ${p.level} (${Number(p.xp)} XP)`
-          )
+          .map((p, i) => `${medals[i] || `${i + 1}.`} **<@${p.discordId}>** — Niveau **${p.level}** ✨ ${Number(p.xp)} XP`)
           .join("\n")
-      );
+      )
+      .setFooter({ text: lang === "fr" ? "Classez-vous en discutant !" : "Rank up by chatting!" });
     await interaction.reply({ embeds: [embed] });
   },
 };

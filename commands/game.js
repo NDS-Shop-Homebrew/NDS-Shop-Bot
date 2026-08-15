@@ -1,4 +1,3 @@
-// /game <query> — autocomplete + recherche un jeu dans games.json
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { listGames } = require("../lib/api");
 const { T, detectLang } = require("../lib/lang");
@@ -8,25 +7,13 @@ module.exports = {
     .setName("game")
     .setDescription("Rechercher un jeu par nom / Search a game by name")
     .addStringOption((o) =>
-      o
-        .setName("query")
-        .setDescription("Nom du jeu")
-        .setRequired(true)
-        .setAutocomplete(true)
+      o.setName("query").setDescription("Nom du jeu").setRequired(true).setAutocomplete(true)
     ),
 
   async autocomplete(interaction, games) {
     const input = interaction.options.getFocused().toLowerCase();
-    const matches = games
-      .filter(
-        (g) =>
-          g.title.toLowerCase().includes(input) ||
-          (g.author || "").toLowerCase().includes(input)
-      )
-      .slice(0, 25);
-    await interaction.respond(
-      matches.map((g) => ({ name: g.title.slice(0, 100), value: g.title.slice(0, 100) }))
-    );
+    const matches = games.filter((g) => g.title.toLowerCase().includes(input)).slice(0, 25);
+    await interaction.respond(matches.map((g) => ({ name: g.title.slice(0, 100), value: g.title.slice(0, 100) })));
   },
 
   async execute(interaction) {
@@ -44,21 +31,23 @@ module.exports = {
       );
       if (!matches.length) return interaction.editReply(t.gameNotFound(query));
 
-      const top = matches.slice(0, 5);
+      const top = matches.slice(0, 6);
       const embed = new EmbedBuilder()
-        .setColor("#0099ff")
-        .setTitle(t.games)
+        .setColor("#0072CE")
+        .setTitle(`🔍 ${matches.length} résultat${matches.length > 1 ? "s" : ""}`)
         .setDescription(
           top
-            .map(
-              (g, i) =>
-                `${i + 1}. **${g.title}** — ${g.author || t.unknown} (_${g.version}_)\n${g.icon}`
-            )
+            .map((g) => {
+              const boxart = g.screenshots?.find((s) => s.description === "Boxart")?.url;
+              return boxart
+                ? `${boxart ? "🖼️" : ""} **${g.title}** — ${g.author || t.unknown} (_${g.version}_)\n[${t.viewGame}](https://db-nds-shop.fr/game/${g.fileName})`
+                : `**${g.title}** — ${g.author || t.unknown} (_${g.version}_)\n[${t.viewGame}](https://db-nds-shop.fr/game/${g.fileName})`;
+            })
             .join("\n\n")
         );
 
-      if (matches.length > 5) {
-        embed.setFooter({ text: t.moreResults(matches.length - 5) });
+      if (matches.length > 6) {
+        embed.setFooter({ text: t.moreResults(matches.length - 6) });
       }
       await interaction.editReply({ embeds: [embed] });
     } catch {
