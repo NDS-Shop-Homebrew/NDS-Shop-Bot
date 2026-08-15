@@ -28,74 +28,68 @@ const config = {
       name: "📢 INFORMATIONS",
       view: "@everyone",
       channels: [
-        { name: "règles", readOnly: true },
-        { name: "annonces", readOnly: true, staffPing: true, keep: true },
-        { name: "annonces-jeux", readOnly: true },
-        { name: "changelog", readOnly: true },
-        { name: "roles", readOnly: true },
+        { name: "règles", readOnly: true, topic: "Règles du serveur — à lire avant de participer." },
+        { name: "annonces", readOnly: true, staffPing: true, keep: true, topic: "Annonces officielles du projet NDS-Shop." },
+        { name: "annonces-jeux", readOnly: true, topic: "Nouveaux jeux ajoutés au catalogue — automatique." },
+        { name: "changelog", readOnly: true, topic: "Historique des mises à jour du site et du catalogue." },
+        { name: "roles", readOnly: true, topic: "Réagissez avec votre langue 🇫🇷/🇬🇧 pour accéder aux salons." },
       ],
     },
     {
       name: "🗨️ COMMUNAUTÉ FR",
       view: ["Membre", "Français"],
       channels: [
-        { name: "général" },
-        { name: "nintendo-ds" },
-        { name: "homebrew" },
-        { name: "entraide" },
-        { name: "partage-et-suggestions" },
+        { name: "général", topic: "Discussions générales en français — bienvenue !" },
+        { name: "nintendo-ds", topic: "Tout sur la Nintendo DS : jeux, astuces, bons plans." },
+        { name: "homebrew", topic: "Développement homebrew NDS — questions, projets, partage." },
+        { name: "entraide", topic: "Besoin d'aide pour télécharger, installer ou jouer ? C'est ici." },
+        { name: "partage-et-suggestions", topic: "Proposez des jeux, partagez vos trouvailles, suggérez des améliorations." },
       ],
     },
     {
       name: "🌍 COMMUNITY EN",
       view: ["Membre", "English"],
       channels: [
-        { name: "general" },
-        { name: "nintendo-ds" },
-        { name: "homebrew" },
-        { name: "help" },
-        { name: "sharing-suggestions" },
-      ],
-    },
-    {
-      name: "🎮 GAMING",
-      view: ["Membre"],
-      channels: [
-        { name: "retrogaming" },
-        { name: "speedrun" },
-        { name: "multiplayer" },
-        { name: "salon-vocal", voice: true },
-        { name: "vocal-jeux", voice: true },
+        { name: "general", topic: "General discussions in English — welcome!" },
+        { name: "nintendo-ds", topic: "Everything Nintendo DS: games, tips, deals." },
+        { name: "homebrew", topic: "NDS homebrew development — questions, projects, sharing." },
+        { name: "help", topic: "Need help downloading, installing, or playing? Ask here." },
+        { name: "sharing-suggestions", topic: "Share games, discoveries, and suggest improvements." },
       ],
     },
     {
       name: "🛠️ PROJET",
       view: ["Membre"],
       channels: [
-        { name: "site-dev" },
-        { name: "app-dev" },
-        { name: "bug-reports" },
-        { name: "suggestions" },
+        { name: "site-dev", topic: "Discussions autour du développement du site db-nds-shop.fr." },
+        { name: "app-dev", topic: "Développement de l'application NDS-Shop (3DS/DSi)." },
+        { name: "bug-reports", topic: "Signalez les bugs du site, de l'app ou du catalogue." },
+        { name: "suggestions", topic: "Propositions d'améliorations pour tout le projet." },
       ],
     },
     {
       name: "🔒 ÉQUIPE",
       view: ["Admin", "Modérateur", "Développeur", "Tester"],
       channels: [
-        { name: "dev-zone" },
-        { name: "testeurs" },
-        { name: "moderation" },
+        { name: "dev-zone", topic: "Zone de développement : discussions techniques, revue de code." },
+        { name: "testeurs", topic: "Espace testeurs : versions beta, retours, bugs." },
+        { name: "moderation", topic: "Espace de modération : coordination de l'équipe." },
       ],
     },
     {
       name: "🎫 TICKETS",
       view: ["Admin", "Modérateur", "Développeur", "Tester"],
-      channels: [{ name: "tickets-readme" }],
+      channels: [{ name: "tickets-readme", topic: "Les tickets sont gérés automatiquement par le bot. DM le bot pour ouvrir un ticket." }],
     },
     {
-      name: "🤖 BOTS",
+      name: "📋 LOGS",
       view: ["Admin", "Modérateur", "Développeur", "Tester"],
-      channels: [{ name: "bot-logs" }],
+      channels: [
+        { name: "log-messages", topic: "Messages supprimés/édités (logs de modération)." },
+        { name: "log-tickets", topic: "Activité des tickets : ouverture, fermeture, réponses." },
+        { name: "log-commands", topic: "Utilisation des commandes du bot." },
+        { name: "log-errors", topic: "Erreurs et avertissements du bot." },
+      ],
     },
   ],
 };
@@ -211,6 +205,7 @@ client.once("clientReady", async () => {
           if (existing) {
             await existing.setParent(category.id);
             await existing.permissionOverwrites.set(overrides);
+            if (def.topic && existing.isTextBased()) await existing.setTopic(def.topic).catch(() => {});
             console.log(`  #${def.name} : réutilisé (déplacé dans la catégorie)`);
             continue;
           }
@@ -221,6 +216,7 @@ client.once("clientReady", async () => {
           type,
           parent: category.id,
           permissionOverwrites: overrides,
+          topic: def.topic || undefined,
         });
         console.log(`  #${def.name} (${type === ChannelType.GuildText ? "texte" : "vocal"}) créé`);
       }

@@ -6,7 +6,7 @@ const { botLog } = require("../lib/botLog");
 async function modLog(client, message) {
   const { GUILD_ID, CHANNELS } = require("../config");
   const guild = client.guilds.cache.get(GUILD_ID);
-  const ch = guild?.channels.cache.find((c) => c.name === CHANNELS.botLogs && c.isTextBased());
+  const ch = guild?.channels.cache.find((c) => c.name === CHANNELS.logMessages && c.isTextBased());
   if (ch) await ch.send(`🛡️ ${message}`).catch(() => {});
 }
 

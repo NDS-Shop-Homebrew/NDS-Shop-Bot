@@ -13,12 +13,15 @@ module.exports = {
   },
   ROLE_MENU_MESSAGE_ID: process.env.ROLE_MENU_MESSAGE_ID || "",
 
-  // Salons cibles
+  // Salons cibles (LOGS)
   CHANNELS: {
     annoncesJeux: "annonces-jeux",
     suggestions: "suggestions",
     bugReports: "bug-reports",
-    botLogs: "bot-logs",
+    logMessages: "log-messages",
+    logTickets: "log-tickets",
+    logCommands: "log-commands",
+    logErrors: "log-errors",
   },
 
   // Annonces automatiques : intervalle de poll de games.json (ms)
