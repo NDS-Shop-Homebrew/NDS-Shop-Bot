@@ -320,6 +320,24 @@ function createDashboard(client) {
     res.json({ ok: true });
   });
 
+  // ---- Warn un utilisateur depuis le dashboard ----
+  app.post("/api/warn", requireAuth, async (req, res) => {
+    const { discordId, reason } = req.body;
+    if (!discordId) return res.status(400).json({ error: "discordId requis" });
+    await prisma.warn.create({
+      data: { discordId, modId: req.user.id, reason: reason || "Avertissement dashboard" },
+    });
+    await botLog("warn", `${req.user.username} a warn ${discordId}: ${reason}`);
+    res.json({ ok: true });
+  });
+
+  // ---- Reload permissions ----
+  app.post("/api/reload", requireAuth, async (_req, res) => {
+    const { reloadMatrix } = require("./lib/permissions");
+    await reloadMatrix();
+    res.json({ ok: true });
+  });
+
   // ---- Messages privés (DM) ----
   app.get("/api/dm/contacts", requireAuth, async (_req, res) => {
     const { listContacts } = require("./lib/dm");

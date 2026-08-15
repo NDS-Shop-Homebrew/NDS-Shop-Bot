@@ -83,6 +83,10 @@ export default function Users() {
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <Button size="sm" variant="ghost" onClick={() => window.location.href = `/messages?dm=${u.discordId}`}><MessageSquare size={14} /></Button>
+                  <Button size="sm" variant="destructive" onClick={() => {
+                    const reason = prompt("Raison du warn :");
+                    if (reason !== null) api("/api/warn", { method: "POST", body: JSON.stringify({ discordId: u.discordId, reason }) }).then(() => load(search));
+                  }}><AlertTriangle size={14} /></Button>
                   <Button size="sm" variant="destructive" onClick={() => bl(u.discordId)}><ShieldBan size={14} /></Button>
                 </div>
               </div>

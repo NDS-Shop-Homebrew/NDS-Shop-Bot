@@ -74,6 +74,11 @@ export default function Settings() {
               <Button onClick={saveLeveling}>Enregistrer</Button>
             </div>
           </div>
+          <div className="pt-4 border-t border-border">
+            <Button variant="outline" onClick={async () => { try { await api("/api/reload", { method: "POST" }); alert("Configuration rechargée !"); } catch {} }}>
+              Recharger les permissions
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
