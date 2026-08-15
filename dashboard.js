@@ -246,7 +246,8 @@ function createDashboard(client) {
   // ---- Users (profils bot) ----
   app.get("/api/users", requireAuth, async (req, res) => {
     const search = String(req.query.search || "");
-    const profiles = await prisma.userProfile.findMany({ orderBy: { xp: "desc" }, take: 100 });
+    const limit = Math.min(Number(req.query.limit || 100), 200);
+    const profiles = await prisma.userProfile.findMany({ orderBy: { xp: "desc" }, take: limit });
     const guild = client?.guilds?.cache.get(GUILD_ID);
     const out = [];
     for (const p of profiles) {
@@ -347,6 +348,43 @@ function createDashboard(client) {
     } catch (err) {
       res.status(500).json({ error: `Envoi échoué : ${err.message}` });
     }
+  });
+
+  // Supprimer une conversation entière
+  app.delete("/api/dm/:userId", requireAuth, async (req, res) => {
+    try {
+      const contact = await prisma.botDmContact.findUnique({ where: { discordId: req.params.userId } });
+      if (contact) await prisma.botDmContact.delete({ where: { id: contact.id } });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Supprimer un message spécifique
+  app.delete("/api/dm/messages/:messageId", requireAuth, async (req, res) => {
+    try {
+      await prisma.botDmMessage.delete({ where: { id: req.params.messageId } }).catch(() => {});
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Warns d'un utilisateur
+  app.get("/api/warns", requireAuth, async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) return res.json([]);
+    const warns = await prisma.warn.findMany({ where: { discordId: String(userId) }, orderBy: { createdAt: "desc" } });
+    res.json(warns);
+  });
+
+  // Tickets d'un utilisateur (tous statuts)
+  app.get("/api/tickets/all", requireAuth, async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) return res.json([]);
+    const tickets = await prisma.ticket.findMany({ where: { userId: String(userId) }, orderBy: { createdAt: "desc" } });
+    res.json(tickets);
   });
 
   // Liste des membres du serveur (pour choisir le destinataire d'un MP)
