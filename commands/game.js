@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const { listGames } = require("../lib/api");
 const { T, detectLang } = require("../lib/lang");
 
@@ -24,32 +24,44 @@ module.exports = {
 
     try {
       const games = await listGames();
-      const matches = games.filter(
-        (g) =>
-          g.title.toLowerCase().includes(query) ||
-          (g.author || "").toLowerCase().includes(query)
-      );
-      if (!matches.length) return interaction.editReply(t.gameNotFound(query));
+      // Meilleur match : titre exact, puis partiel
+      let match = games.find((g) => g.title.toLowerCase() === query) ||
+                  games.find((g) => g.title.toLowerCase().includes(query));
+      const allMatches = games.filter((g) => g.title.toLowerCase().includes(query) || (g.author || "").toLowerCase().includes(query));
 
-      const top = matches.slice(0, 6);
+      if (!match && allMatches.length) match = allMatches[0];
+      if (!match) return interaction.editReply(t.gameNotFound(query));
+
+      const g = match;
+      const boxart = g.screenshots?.find((s) => s.description === "Boxart")?.url;
+
       const embed = new EmbedBuilder()
         .setColor("#0072CE")
-        .setTitle(`🔍 ${matches.length} résultat${matches.length > 1 ? "s" : ""}`)
-        .setDescription(
-          top
-            .map((g) => {
-              const boxart = g.screenshots?.find((s) => s.description === "Boxart")?.url;
-              return boxart
-                ? `${boxart ? "🖼️" : ""} **${g.title}** — ${g.author || t.unknown} (_${g.version}_)\n[${t.viewGame}](https://db-nds-shop.fr/game/${g.fileName})`
-                : `**${g.title}** — ${g.author || t.unknown} (_${g.version}_)\n[${t.viewGame}](https://db-nds-shop.fr/game/${g.fileName})`;
-            })
-            .join("\n\n")
-        );
+        .setTitle(g.title)
+        .setURL(`https://db-nds-shop.fr/game/${g.fileName}`)
+        .setThumbnail(g.icon || null)
+        .setImage(boxart || null)
+        .addFields(
+          { name: t.author, value: g.author || t.unknown, inline: true },
+          { name: t.version, value: g.version || t.unknown, inline: true },
+          { name: t.systemsField, value: (g.systems || []).join(", ") || t.unknown, inline: true },
+          { name: "⬇️ " + t.downloads, value: Object.keys(g.downloads || {}).join("\n") || t.unknown, inline: false }
+        )
+        .setFooter({ text: `NDS-Shop · ${allMatches.length === 1 ? "Résultat unique" : `${allMatches.length} résultats`}` });
 
-      if (matches.length > 6) {
-        embed.setFooter({ text: t.moreResults(matches.length - 6) });
-      }
-      await interaction.editReply({ embeds: [embed] });
+      const row = new ActionRowBuilder().addButtons(
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Link)
+          .setURL(`https://db-nds-shop.fr/game/${g.fileName}`)
+          .setLabel("Voir sur le site"),
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary)
+          .setCustomId("nope")
+          .setLabel(`${allMatches.length} résultat(s)`)
+          .setDisabled(true)
+      );
+
+      await interaction.editReply({ embeds: [embed], components: [row] });
     } catch {
       await interaction.editReply(t.error);
     }
