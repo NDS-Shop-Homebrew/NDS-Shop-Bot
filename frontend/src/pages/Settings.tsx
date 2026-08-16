@@ -15,6 +15,7 @@ export default function Settings() {
   const [welcome, setWelcome] = useState("");
   const [poll, setPoll] = useState("300000");
   const [levelEnabled, setLevelEnabled] = useState("true");
+  const [gameInfo, setGameInfo] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -22,6 +23,7 @@ export default function Settings() {
         const s = await api<SettingsData>("/api/settings");
         setWelcome(s.welcomeMessage || "");
         setPoll(s.pollInterval || "300000");
+        setGameInfo(s.gameInfoTemplate || "");
         const l = await api<Leveling>("/api/leveling");
         setLeveling(l);
         setLevelEnabled(String(l.enabled));
@@ -73,6 +75,18 @@ export default function Settings() {
               </Select>
               <Button onClick={saveLeveling}>Enregistrer</Button>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Template salon #game-info (dernier jeu ajouté)</Label>
+            <textarea
+              value={gameInfo}
+              onChange={(e) => setGameInfo(e.target.value)}
+              rows={5}
+              placeholder="Variables : {{title}} {{author}} {{version}} {{systems}} {{icon}} {{boxart}} {{downloadUrl}} {{gameUrl}} {{updated}}"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <p className="text-xs text-muted-foreground">Variables disponibles : <code>{"{{title}}"}</code> <code>{"{{author}}"}</code> <code>{"{{version}}"}</code> <code>{"{{systems}}"}</code> <code>{"{{icon}}"}</code> <code>{"{{boxart}}"}</code> <code>{"{{downloadUrl}}"}</code> <code>{"{{gameUrl}}"}</code> <code>{"{{updated}}"}</code></p>
+            <Button onClick={() => saveSetting("gameInfoTemplate", gameInfo)}>Enregistrer</Button>
           </div>
           <div className="pt-4 border-t border-border">
             <Button variant="outline" onClick={async () => { try { await api("/api/reload", { method: "POST" }); alert("Configuration rechargée !"); } catch {} }}>

@@ -31,6 +31,7 @@ const config = {
         { name: "règles", readOnly: true, topic: "Règles du serveur — à lire avant de participer." },
         { name: "annonces", readOnly: true, staffPing: true, keep: true, topic: "Annonces officielles du projet NDS-Shop." },
         { name: "annonces-jeux", readOnly: true, topic: "Nouveaux jeux ajoutés au catalogue — automatique." },
+        { name: "game-info", readOnly: true, topic: "Dernier jeu ajouté au catalogue — mis à jour automatiquement." },
         { name: "changelog", readOnly: true, topic: "Historique des mises à jour du site et du catalogue." },
         { name: "roles", readOnly: true, topic: "Réagissez avec votre langue 🇫🇷/🇬🇧 pour accéder aux salons." },
       ],

@@ -12,6 +12,7 @@ const DICT: Record<string, { fr: string; en: string }> = {
   "nav.messages": { fr: "Messages", en: "Messages" },
   "nav.blacklist": { fr: "Blacklist", en: "Blacklist" },
   "nav.send": { fr: "Envoyer", en: "Send" },
+  "nav.channels": { fr: "Salons", en: "Channels" },
   "nav.logs": { fr: "Logs", en: "Logs" },
   "nav.settings": { fr: "Réglages", en: "Settings" },
   "nav.logout": { fr: "Déconnexion", en: "Logout" },

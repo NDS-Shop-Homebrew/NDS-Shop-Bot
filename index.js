@@ -8,6 +8,7 @@ const {
   Partials,
   REST,
   Routes,
+  ChannelType,
 } = require("discord.js");
 require("dotenv").config();
 
@@ -17,6 +18,7 @@ const { T } = require("./lib/lang");
 const { botLog } = require("./lib/botLog");
 const { canUse, loadMatrix } = require("./lib/permissions");
 const { sendTicketMenu, createTicket, relayMessage, closeTicket } = require("./lib/tickets");
+const { renderTemplate, DEFAULT_TEMPLATE } = require("./lib/gameInfo");
 const prisma = require("./lib/db");
 
 // ---- Chargement des commandes slash ----
@@ -133,6 +135,60 @@ async function announceGame(client, g) {
   if (channel) await channel.send({ embeds: [embed] });
 }
 
+// Met à jour #game-info avec le dernier jeu ajouté (template éditable en base)
+async function updateGameInfo(client, force = false) {
+  const guild = client.guilds.cache.get(GUILD_ID);
+  const channel = guild?.channels.cache.find((c) => c.name === CHANNELS.gameInfo && c.isTextBased());
+  if (!channel || gamesCache.length === 0) return;
+
+  const latest = [...gamesCache].sort((a, b) => new Date(b.updated) - new Date(a.updated))[0];
+  if (!latest) return;
+
+  const tplRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoTemplate" } });
+  const template = tplRow?.value || DEFAULT_TEMPLATE;
+  const content = renderTemplate(template, latest);
+
+  try {
+    const msgRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoMessageId" } });
+    const msgId = msgRow?.value;
+    const cached = msgId ? channel.messages.cache.get(msgId) : null;
+    const msg = cached || (msgId ? await channel.messages.fetch(msgId).catch(() => null) : null);
+    if (msg) {
+      await msg.edit(content);
+    } else {
+      const sent = await channel.send(content);
+      await prisma.botSetting.upsert({
+        where: { key: "gameInfoMessageId" },
+        update: { value: sent.id },
+        create: { key: "gameInfoMessageId", value: sent.id },
+      });
+    }
+  } catch (err) {
+    await botLog("error", `#game-info : ${err.message}`);
+  }
+}
+
+// Crée les salons manquants (game-info, welcome) sans toucher à l'existant.
+async function ensureChannels(client) {
+  const guild = client.guilds.cache.get(GUILD_ID);
+  if (!guild) return;
+  const desired = [
+    { name: CHANNELS.gameInfo, parent: "📢 INFORMATIONS", topic: "Dernier jeu ajouté au catalogue — mis à jour automatiquement." },
+    { name: "welcome", parent: "📢 INFORMATIONS", topic: "Bienvenue ! Présentez-vous et dites bonjour." },
+  ];
+  for (const d of desired) {
+    const exists = guild.channels.cache.some((c) => c.name === d.name && c.type === ChannelType.GuildText);
+    if (exists) continue;
+    const parent = guild.channels.cache.find((c) => c.name === d.parent && c.type === ChannelType.GuildCategory);
+    await guild.channels.create({
+      name: d.name,
+      type: ChannelType.GuildText,
+      parent: parent?.id,
+      topic: d.topic,
+    }).then((c) => botLog("info", `Salon #${d.name} créé`)).catch((err) => botLog("error", `Salon #${d.name} : ${err.message}`));
+  }
+}
+
 // Poll : détecte les nouveaux jeux et les annonce (état stocké en base BotSetting)
 async function pollNewGames(client) {
   await refreshGamesCache();
@@ -147,6 +203,7 @@ async function pollNewGames(client) {
         create: { key: "knownGames", value: JSON.stringify(Object.fromEntries(gamesCache.map((g) => [g.fileName, 1]))) },
       });
       await botLog("info", `${gamesCache.length} jeux enregistrés (premier poll)`);
+      await updateGameInfo(client);
       return;
     }
 
@@ -166,6 +223,8 @@ async function pollNewGames(client) {
       update: { value: JSON.stringify(Object.fromEntries(gamesCache.map((g) => [g.fileName, 1]))) },
       create: { key: "knownGames", value: JSON.stringify(Object.fromEntries(gamesCache.map((g) => [g.fileName, 1]))) },
     });
+
+    await updateGameInfo(client);
   } catch (err) {
     await botLog("error", `Poll: ${err.message}`);
   }
@@ -225,6 +284,7 @@ async function startBot() {
     await loadMatrix();
     await registerSlashCommands(client);
     await postRoleMenu(client);
+    await ensureChannels(client);
 
     // Intervalle de poll configurable depuis le dashboard (BotSetting)
     let pollMs = POLL_INTERVAL_MS;

@@ -2,6 +2,7 @@
 // Auth via Better Auth (mêmes comptes que upload). API + front statique.
 const express = require("express");
 const path = require("path");
+const { ChannelType } = require("discord.js");
 const { toNodeHandler, fromNodeHeaders } = require("better-auth/node");
 const auth = require("./lib/auth");
 const prisma = require("./lib/db");
@@ -81,15 +82,44 @@ function createDashboard(client) {
   app.get("/api/channels", requireAuth, (req, res) => {
     const guild = client?.guilds?.cache.get(GUILD_ID);
     if (!guild) return res.json([]);
-    const chans = guild.channels.cache
-      .filter((c) => c.isTextBased() && c.parentId)
+    const roleName = (id) => {
+      if (id === guild.roles.everyone.id) return "@everyone";
+      return guild.roles.cache.get(id)?.name || "";
+    };
+    const permsOf = (c) =>
+      c.permissionOverwrites.cache.map((o) => ({
+        role: roleName(o.id),
+        allow: o.allow.toArray(),
+        deny: o.deny.toArray(),
+      })).filter((p) => p.allow.length || p.deny.length);
+    const cats = guild.channels.cache
+      .filter((c) => c.type === ChannelType.GuildCategory)
       .map((c) => ({
         id: c.id,
         name: c.name,
-        parent: c.parent?.name || "",
-      }))
-      .sort((a, b) => a.parent.localeCompare(b.parent) || a.name.localeCompare(b.name));
-    res.json(chans);
+        perms: permsOf(c),
+        channels: guild.channels.cache
+          .filter((ch) => ch.parentId === c.id && ch.isTextBased())
+          .map((ch) => ({ id: ch.id, name: ch.name, perms: permsOf(ch) })),
+      }));
+    res.json(cats);
+  });
+
+  // Resynchronise chaque salon avec sa catégorie (hérite des perms de la catégorie)
+  app.post("/api/channels/sync", requireAuth, async (_req, res) => {
+    const guild = client?.guilds?.cache.get(GUILD_ID);
+    if (!guild) return res.status(400).json({ error: "Bot hors ligne" });
+    let synced = 0;
+    for (const cat of guild.channels.cache.filter((c) => c.type === ChannelType.GuildCategory).values()) {
+      for (const ch of guild.channels.cache.filter((c) => c.parentId === cat.id).values()) {
+        if (ch.type !== ChannelType.GuildText && ch.type !== ChannelType.GuildVoice) continue;
+        try {
+          await ch.lockPermissions();
+          synced++;
+        } catch {}
+      }
+    }
+    res.json({ ok: true, synced });
   });
 
   // ---- Annonces ----

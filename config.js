@@ -16,6 +16,7 @@ module.exports = {
   // Salons cibles (LOGS)
   CHANNELS: {
     annoncesJeux: "annonces-jeux",
+    gameInfo: "game-info",
     suggestions: "suggestions",
     bugReports: "bug-reports",
     logMessages: "log-messages",

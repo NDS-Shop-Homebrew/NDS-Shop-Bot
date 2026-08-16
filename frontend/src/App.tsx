@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Ticket, Megaphone, Gamepad2, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages, MessageSquare, ShieldBan, ChevronDown, MoreHorizontal } from "lucide-react";
+import { LayoutDashboard, Ticket, Megaphone, Gamepad2, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages, MessageSquare, ShieldBan, ChevronDown, MoreHorizontal, Hash } from "lucide-react";
 import { UIProvider, useUI } from "./context/UIContext";
 import { api, logout } from "./lib/api";
 import { cn } from "./lib/utils";
@@ -16,8 +16,9 @@ import Blacklist from "./pages/Blacklist";
 import Send from "./pages/Send";
 import Logs from "./pages/Logs";
 import Settings from "./pages/Settings";
+import Channels from "./pages/Channels";
 
-type Tab = "overview" | "tickets" | "announcements" | "games" | "users" | "permissions" | "messages" | "blacklist" | "send" | "logs" | "settings";
+type Tab = "overview" | "tickets" | "announcements" | "games" | "users" | "permissions" | "messages" | "blacklist" | "send" | "logs" | "settings" | "channels";
 
 const MAIN_TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "overview", icon: LayoutDashboard, key: "nav.overview" },
@@ -34,6 +35,7 @@ const ADMIN_TABS: { id: Tab; icon: any; key: string }[] = [
 ];
 
 const SYST_TABS: { id: Tab; icon: any; key: string }[] = [
+  { id: "channels", icon: Hash, key: "nav.channels" },
   { id: "send", icon: SendIcon, key: "nav.send" },
   { id: "logs", icon: ScrollText, key: "nav.logs" },
   { id: "settings", icon: SettingsIcon, key: "nav.settings" },
@@ -85,7 +87,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="dsi-gradient w-8 h-8 rounded-lg flex items-center justify-center text-white font-extrabold text-sm">N</div>
+            <img src="/logo.png" alt="N" className="w-8 h-8 rounded-lg" />
             <span className="font-bold">{t("app.title")}</span>
           </div>
           <div className="flex items-center gap-3">
@@ -160,7 +162,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
               <MoreHorizontal size={15} /> Système <ChevronDown size={12} />
             </button>
             {systOpen && (
-              <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg p-1 min-w-[180px] z-40">
+              <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-lg shadow-lg p-1 min-w-[180px] z-40">
                 {SYST_TABS.map((t2) => (
                   <button
                     key={t2.id}
@@ -192,6 +194,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {tab === "blacklist" && <Blacklist />}
           {tab === "send" && <Send />}
           {tab === "logs" && <Logs />}
+          {tab === "channels" && <Channels />}
           {tab === "settings" && <Settings />}
         </motion.div>
       </main>
