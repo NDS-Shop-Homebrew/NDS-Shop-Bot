@@ -82,7 +82,7 @@ function createDashboard(client) {
   app.get("/api/channels", requireAuth, async (req, res) => {
     const guild = client?.guilds?.cache.get(GUILD_ID);
     if (!guild) return res.json([]);
-    try { await guild.channels.fetch(); } catch {}
+    const all = await guild.channels.fetch();
     const roleName = (id) => {
       if (id === guild.roles.everyone.id) return "@everyone";
       return guild.roles.cache.get(id)?.name || "";
@@ -93,16 +93,20 @@ function createDashboard(client) {
         allow: o.allow.toArray(),
         deny: o.deny.toArray(),
       })).filter((p) => p.allow.length || p.deny.length);
-    const cats = guild.channels.cache
-      .filter((c) => c.type === ChannelType.GuildCategory)
-      .map((c) => ({
+    const textOf = (ch) => ({ id: ch.id, name: ch.name, perms: permsOf(ch) });
+    const cats = [];
+    for (const c of all.filter((ch) => ch.type === ChannelType.GuildCategory).values()) {
+      cats.push({
         id: c.id,
         name: c.name,
         perms: permsOf(c),
-        channels: guild.channels.cache
-          .filter((ch) => ch.parentId === c.id && ch.isTextBased())
-          .map((ch) => ({ id: ch.id, name: ch.name, perms: permsOf(ch) })),
-      }));
+        channels: all.filter((ch) => ch.parentId === c.id && ch.isTextBased()).map(textOf),
+      });
+    }
+    const orphans = all.filter((ch) => !ch.parentId && ch.isTextBased());
+    if (orphans.size) {
+      cats.push({ id: "no-category", name: "Hors catégorie", perms: [], channels: orphans.map(textOf) });
+    }
     res.json(cats);
   });
 
