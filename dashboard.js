@@ -79,9 +79,10 @@ function createDashboard(client) {
   });
 
   // ---- Salons textuels ----
-  app.get("/api/channels", requireAuth, (req, res) => {
+  app.get("/api/channels", requireAuth, async (req, res) => {
     const guild = client?.guilds?.cache.get(GUILD_ID);
     if (!guild) return res.json([]);
+    try { await guild.channels.fetch(); } catch {}
     const roleName = (id) => {
       if (id === guild.roles.everyone.id) return "@everyone";
       return guild.roles.cache.get(id)?.name || "";
