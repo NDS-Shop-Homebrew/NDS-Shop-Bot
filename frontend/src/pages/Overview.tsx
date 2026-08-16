@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
 import { useUI } from "../context/UIContext";
 import { api, type StatusData } from "../lib/api";
-import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock, MessageSquare, Trophy } from "lucide-react";
-
-interface LeaderUser { discordId: string; username: string; xp: number; level: number; totalMsgs: number }
+import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock, MessageSquare } from "lucide-react";
 
 export default function Overview() {
   const { t } = useUI();
@@ -15,7 +12,6 @@ export default function Overview() {
   const [commands, setCommands] = useState<number>(0);
   const [blacklist, setBlacklist] = useState<number>(0);
   const [dms, setDms] = useState<number>(0);
-  const [leader, setLeader] = useState<LeaderUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -27,7 +23,6 @@ export default function Overview() {
       try { setCommands((await api<any[]>("/api/commands?limit=100")).length); } catch {}
       try { setBlacklist((await api<any[]>("/api/blacklist")).length); } catch {}
       try { setDms((await api<any[]>("/api/dm/contacts")).filter((c) => c.unreadCount > 0).length); } catch {}
-      try { setLeader((await api<LeaderUser[]>("/api/users?limit=3")).slice(0, 3)); } catch {}
     } catch {
       setStatus(null);
     } finally {
@@ -66,25 +61,6 @@ export default function Overview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardContent className="p-5">
-            <h2 className="font-semibold mb-3 flex items-center gap-2"><Trophy size={16} className="text-amber-500" /> Top 3 — XP</h2>
-            <div className="space-y-2">
-              {leader.length === 0 && <p className="text-sm text-muted-foreground">Pas encore de classement.</p>}
-              {leader.map((u, i) => (
-                <div key={u.discordId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                  <span className="text-lg font-bold w-6 text-center">{["🥇", "🥈", "🥉"][i]}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{u.username}</p>
-                    <p className="text-xs text-muted-foreground">Niveau {u.level} • {u.xp} XP • {u.totalMsgs} msgs</p>
-                  </div>
-                  <Badge variant="secondary">Niv. {u.level}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardContent className="p-5">
             <h2 className="font-semibold mb-2">{t("overview.quickActions")}</h2>

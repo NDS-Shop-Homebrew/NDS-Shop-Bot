@@ -95,6 +95,16 @@ export default function Settings() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
             <div className="space-y-2">
+              <Label>Salons</Label>
+              <Button variant="outline" onClick={async () => {
+                try {
+                  const r = await api<{ synced: number }>("/api/channels/sync", { method: "POST" });
+                  alert(`Synchronisés : ${r.synced} salon(s)`);
+                } catch {}
+              }}>Synchroniser salons ↔ catégories</Button>
+              <p className="text-xs text-muted-foreground">Fait hériter chaque salon des permissions de sa catégorie.</p>
+            </div>
+            <div className="space-y-2">
               <Label>Auto-action warns (seuil de warns actifs)</Label>
               <div className="flex gap-2 items-center">
                 <Input type="number" value={warnMax} onChange={(e) => setWarnMax(e.target.value)} className="max-w-[80px]" />

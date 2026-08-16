@@ -21,6 +21,8 @@ export default function Users() {
   const [users, setUsers] = useState<BotUser[]>([]);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [blacklistedIds, setBlacklistedIds] = useState<Set<string>>(new Set());
+  const [onlyBlack, setOnlyBlack] = useState(false);
 
   const load = async (s: string) => {
     try {
@@ -37,6 +39,8 @@ export default function Users() {
           }
         })
       );
+      const bl = await api<any[]>("/api/blacklist").catch(() => []);
+      setBlacklistedIds(new Set(bl.map((b) => b.discordId)));
       setUsers(enriched);
     } catch {}
   };
@@ -46,24 +50,25 @@ export default function Users() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const bl = async (id: string) => {
-    try {
-      await api("/api/blacklist", { method: "POST", body: JSON.stringify({ discordId: id, reason: "Dashboard" }) });
-      load(search);
-    } catch {}
-  };
+  const visible = onlyBlack ? users.filter((u) => blacklistedIds.has(u.discordId)) : users;
 
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-3">
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un utilisateur (ID ou nom)…" />
-          <p className="text-xs text-muted-foreground mt-1">{users.length} utilisateur{users.length > 1 ? "s" : ""} trouvé{users.length > 1 ? "s" : ""}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">{visible.length} utilisateur{visible.length > 1 ? "s" : ""} trouvé{visible.length > 1 ? "s" : ""}</p>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={onlyBlack} onChange={(e) => setOnlyBlack(e.target.checked)} />
+              Blacklistés uniquement
+            </label>
+          </div>
         </CardContent>
       </Card>
       <div className="space-y-2">
-        {users.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Aucun utilisateur trouvé.</p>}
-        {users.map((u) => (
+        {visible.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Aucun utilisateur trouvé.</p>}
+        {visible.map((u) => (
           <Card key={u.discordId}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -94,7 +99,13 @@ export default function Users() {
                         if (r?.action) alert(`⚠️ Seuil atteint (${r.activeWarns} warns actifs) → action automatique : ${r.action.toUpperCase()} déclenché !`);
                       });
                   }}><AlertTriangle size={14} /></Button>
-                  <Button size="sm" variant="destructive" onClick={() => bl(u.discordId)}><ShieldBan size={14} /></Button>
+                  <Button size="sm" variant={blacklistedIds.has(u.discordId) ? "accent" : "destructive"} onClick={() => {
+                    const isBl = blacklistedIds.has(u.discordId);
+                    const doIt = isBl
+                      ? api(`/api/blacklist/${u.discordId}`, { method: "DELETE" })
+                      : (() => { const reason = prompt("Raison de la blacklist :") ?? "Dashboard"; return api("/api/blacklist", { method: "POST", body: JSON.stringify({ discordId: u.discordId, reason }) }); })();
+                    doIt.then(() => load(search));
+                  }}><ShieldBan size={14} /></Button>
                 </div>
               </div>
               {expanded === u.discordId && (

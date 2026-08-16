@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Ticket, Megaphone, Gamepad2, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages, MessageSquare, ShieldBan, ChevronDown, MoreHorizontal, Hash, Terminal, Trophy } from "lucide-react";
+import { LayoutDashboard, Ticket, Megaphone, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages, MessageSquare, ChevronDown, MoreHorizontal, Terminal, Trophy } from "lucide-react";
 import { UIProvider, useUI } from "./context/UIContext";
 import { api, logout } from "./lib/api";
 import { cn } from "./lib/utils";
@@ -8,41 +8,35 @@ import Login from "./pages/Login";
 import Overview from "./pages/Overview";
 import Tickets from "./pages/Tickets";
 import Announcements from "./pages/Announcements";
-import Games from "./pages/Games";
 import Users from "./pages/Users";
 import Permissions from "./pages/Permissions";
 import Messages from "./pages/Messages";
-import Blacklist from "./pages/Blacklist";
 import Send from "./pages/Send";
 import Logs from "./pages/Logs";
 import Settings from "./pages/Settings";
-import Channels from "./pages/Channels";
 import Commands from "./pages/Commands";
 import Leaderboard from "./pages/Leaderboard";
 
-type Tab = "overview" | "tickets" | "announcements" | "games" | "users" | "permissions" | "messages" | "blacklist" | "send" | "logs" | "settings" | "channels" | "commands" | "leaderboard";
+type Tab = "overview" | "tickets" | "announcements" | "users" | "permissions" | "messages" | "send" | "logs" | "settings" | "commands" | "leaderboard";
 
 const MAIN_TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "overview", icon: LayoutDashboard, key: "nav.overview" },
   { id: "tickets", icon: Ticket, key: "nav.tickets" },
-  { id: "games", icon: Gamepad2, key: "nav.games" },
   { id: "messages", icon: MessageSquare, key: "nav.messages" },
 ];
 
 const ADMIN_TABS: { id: Tab; icon: any; key: string }[] = [
-  { id: "announcements", icon: Megaphone, key: "nav.announcements" },
   { id: "users", icon: UsersIcon, key: "nav.users" },
-  { id: "permissions", icon: ShieldCheck, key: "nav.permissions" },
-  { id: "blacklist", icon: ShieldBan, key: "nav.blacklist" },
+  { id: "leaderboard", icon: Trophy, key: "nav.leaderboard" },
   { id: "commands", icon: Terminal, key: "nav.commands" },
+  { id: "announcements", icon: Megaphone, key: "nav.announcements" },
 ];
 
 const SYST_TABS: { id: Tab; icon: any; key: string }[] = [
-  { id: "channels", icon: Hash, key: "nav.channels" },
+  { id: "settings", icon: SettingsIcon, key: "nav.settings" },
+  { id: "permissions", icon: ShieldCheck, key: "nav.permissions" },
   { id: "send", icon: SendIcon, key: "nav.send" },
   { id: "logs", icon: ScrollText, key: "nav.logs" },
-  { id: "leaderboard", icon: Trophy, key: "nav.leaderboard" },
-  { id: "settings", icon: SettingsIcon, key: "nav.settings" },
 ];
 
 function Shell({ onLogout }: { onLogout: () => void }) {
@@ -132,7 +126,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
                 isAdminTab ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
               )}
             >
-              <MoreHorizontal size={15} /> Admin <ChevronDown size={12} />
+              <MoreHorizontal size={15} /> Gestion <ChevronDown size={12} />
             </button>
             {adminOpen && (
               <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg p-1 min-w-[180px] z-40">
@@ -190,14 +184,11 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {tab === "overview" && <Overview />}
           {tab === "tickets" && <Tickets />}
           {tab === "announcements" && <Announcements />}
-          {tab === "games" && <Games />}
           {tab === "users" && <Users />}
           {tab === "permissions" && <Permissions />}
           {tab === "messages" && <Messages />}
-          {tab === "blacklist" && <Blacklist />}
           {tab === "send" && <Send />}
           {tab === "logs" && <Logs />}
-          {tab === "channels" && <Channels />}
           {tab === "settings" && <Settings />}
           {tab === "commands" && <Commands />}
           {tab === "leaderboard" && <Leaderboard />}
