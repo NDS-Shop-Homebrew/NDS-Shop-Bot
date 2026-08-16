@@ -62,3 +62,4 @@ export interface Ticket { id: string; userId: string; username: string | null; c
 export interface TicketMessage { id: string; author: string; content: string; direction: string; createdAt: string }
 export interface BotUser { discordId: string; username: string; xp: number; level: number; totalMsgs: number; favorites: string[] }
 export interface BotLog { id: string; level: string; message: string; createdAt: string }
+export interface CmdLog { id: string; userId: string; username: string | null; command: string; options: string | null; createdAt: string }

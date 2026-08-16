@@ -13,7 +13,7 @@ interface BotUser {
   level: number;
   totalMsgs: number;
   favorites: string[];
-  warns?: { reason: string; createdAt: string }[];
+  warns?: { reason: string; createdAt: string; expiresAt: string | null }[];
   tickets?: { category: string; status: string; id: string }[];
 }
 
@@ -85,7 +85,14 @@ export default function Users() {
                   <Button size="sm" variant="ghost" onClick={() => window.location.href = `/messages?dm=${u.discordId}`}><MessageSquare size={14} /></Button>
                   <Button size="sm" variant="destructive" onClick={() => {
                     const reason = prompt("Raison du warn :");
-                    if (reason !== null) api("/api/warn", { method: "POST", body: JSON.stringify({ discordId: u.discordId, reason }) }).then(() => load(search));
+                    if (reason === null) return;
+                    const days = prompt("Durée en jours (laisser vide = permanent) :");
+                    const d = parseInt(days || "0", 10);
+                    api("/api/warn", { method: "POST", body: JSON.stringify({ discordId: u.discordId, reason, days: isNaN(d) ? 0 : d }) })
+                      .then((r: any) => {
+                        load(search);
+                        if (r?.action) alert(`⚠️ Seuil atteint (${r.activeWarns} warns actifs) → action automatique : ${r.action.toUpperCase()} déclenché !`);
+                      });
                   }}><AlertTriangle size={14} /></Button>
                   <Button size="sm" variant="destructive" onClick={() => bl(u.discordId)}><ShieldBan size={14} /></Button>
                 </div>
@@ -93,7 +100,21 @@ export default function Users() {
               {expanded === u.discordId && (
                 <div className="mt-3 space-y-2 pt-3 border-t border-border">
                   <p className="text-xs font-semibold">Favoris : {u.favorites.length ? u.favorites.join(", ") : "aucun"}</p>
-                  {u.warns && u.warns.length > 0 && <p className="text-xs text-amber-400">Warns : {u.warns.map((w) => w.reason).join(", ")}</p>}
+                  {u.warns && u.warns.length > 0 && (
+                    <div className="text-xs text-amber-400">
+                      Warns :
+                      {u.warns.map((w, i) => {
+                        const expired = w.expiresAt && new Date(w.expiresAt) < new Date();
+                        return (
+                          <span key={i} className="ml-1">
+                            {w.reason} {w.expiresAt ? `(exp. ${new Date(w.expiresAt).toLocaleDateString()})` : "(permanent)"}
+                            {expired && " [expiré]"}
+                            {i < u.warns!.length - 1 ? "," : ""}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                   {u.tickets && u.tickets.filter((t) => t.status === "open").length > 0 && (
                     <div className="flex gap-2 flex-wrap">
                       {u.tickets.filter((t) => t.status === "open").map((tk) => (

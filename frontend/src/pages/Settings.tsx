@@ -16,6 +16,8 @@ export default function Settings() {
   const [poll, setPoll] = useState("300000");
   const [levelEnabled, setLevelEnabled] = useState("true");
   const [gameInfo, setGameInfo] = useState("");
+  const [warnMax, setWarnMax] = useState("3");
+  const [warnAction, setWarnAction] = useState("kick");
 
   useEffect(() => {
     (async () => {
@@ -27,6 +29,9 @@ export default function Settings() {
         const l = await api<Leveling>("/api/leveling");
         setLeveling(l);
         setLevelEnabled(String(l.enabled));
+        const wc = await api<{ max: number; action: string }>("/api/warn-config");
+        setWarnMax(String(wc.max));
+        setWarnAction(wc.action);
       } catch {}
     })();
   }, []);
@@ -87,6 +92,55 @@ export default function Settings() {
             />
             <p className="text-xs text-muted-foreground">Variables disponibles : <code>{"{{title}}"}</code> <code>{"{{author}}"}</code> <code>{"{{version}}"}</code> <code>{"{{systems}}"}</code> <code>{"{{titleId}}"}</code> <code>{"{{stars}}"}</code> <code>{"{{downloadUrl}}"}</code> <code>{"{{gameUrl}}"}</code> <code>{"{{updated}}"}</code> — la boxart et l'icône sont affichées automatiquement dans l'embed.</p>
             <Button onClick={() => saveSetting("gameInfoTemplate", gameInfo)}>Enregistrer</Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
+            <div className="space-y-2">
+              <Label>Auto-action warns (seuil de warns actifs)</Label>
+              <div className="flex gap-2 items-center">
+                <Input type="number" value={warnMax} onChange={(e) => setWarnMax(e.target.value)} className="max-w-[80px]" />
+                <Select value={warnAction} onValueChange={setWarnAction}>
+                  <SelectTrigger className="max-w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kick">Kick</SelectItem>
+                    <SelectItem value="ban">Ban</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={async () => {
+                  try {
+                    await api("/api/warn-config", { method: "PUT", body: JSON.stringify({ max: Number(warnMax), action: warnAction }) });
+                    alert("Config warns enregistrée !");
+                  } catch {}
+                }}>Enregistrer</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">0 = jamais d'action automatique. L'action est déclenchée quand le nombre de warns non expirés atteint le seuil.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Sauvegarde des réglages (backup)</Label>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={async () => {
+                  try {
+                    const data = await api<any>("/api/settings/export");
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `nds-shop-bot-settings-${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                  } catch {}
+                }}>Exporter</Button>
+                <input type="file" accept=".json" className="hidden" id="settings-import" onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  try {
+                    const data = JSON.parse(await f.text());
+                    const r = await api<{ imported: number }>("/api/settings/import", { method: "POST", body: JSON.stringify(data) });
+                    alert(`Importé : ${r.imported} réglages`);
+                  } catch { alert("Fichier invalide"); }
+                  e.target.value = "";
+                }} />
+                <Button variant="outline" onClick={() => document.getElementById("settings-import")?.click()}>Importer</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Export/import JSON des BotSetting — pratique avant de modifier la config.</p>
+            </div>
           </div>
           <div className="pt-4 border-t border-border">
             <Button variant="outline" onClick={async () => { try { await api("/api/reload", { method: "POST" }); alert("Configuration rechargée !"); } catch {} }}>

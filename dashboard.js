@@ -342,7 +342,13 @@ function createDashboard(client) {
   // ---- Commandes log ----
   app.get("/api/commands", requireAuth, async (req, res) => {
     const limit = Math.min(Number(req.query.limit || 100), 500);
-    const logs = await prisma.botCommandLog.findMany({ orderBy: { createdAt: "desc" }, take: limit });
+    const q = String(req.query.search || "").toLowerCase();
+    const cmd = String(req.query.command || "");
+    const where = {
+      ...(cmd ? { command: cmd } : {}),
+      ...(q ? { OR: [{ username: { contains: q } }, { userId: { contains: q } }] } : {}),
+    };
+    const logs = await prisma.botCommandLog.findMany({ where, orderBy: { createdAt: "desc" }, take: limit });
     res.json(logs);
   });
 
@@ -369,13 +375,22 @@ function createDashboard(client) {
 
   // ---- Warn un utilisateur depuis le dashboard ----
   app.post("/api/warn", requireAdmin, async (req, res) => {
-    const { discordId, reason } = req.body;
+    const { discordId, reason, days } = req.body;
     if (!discordId) return res.status(400).json({ error: "discordId requis" });
+    const expiresAt = Number(days) > 0 ? new Date(Date.now() + Number(days) * 86400000) : null;
     await prisma.warn.create({
-      data: { discordId, modId: req.user.id, reason: reason || "Avertissement dashboard" },
+      data: { discordId, modId: req.user.id, reason: reason || "Avertissement dashboard", expiresAt },
     });
-    await botLog("warn", `${req.user.username} a warn ${discordId}: ${reason}`);
-    res.json({ ok: true });
+    await botLog("warn", `${req.user.username} a warn ${discordId}: ${reason}${expiresAt ? ` (${days}j)` : ""}`);
+    let action = null;
+    let activeWarns = 0;
+    try {
+      const cfg = await prisma.botSetting.findUnique({ where: { key: "warnConfig" } });
+      const wc = cfg?.value ? JSON.parse(cfg.value) : { max: 3, action: "kick" };
+      activeWarns = await prisma.warn.count({ where: { discordId, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] } });
+      if (wc.max > 0 && activeWarns >= wc.max) action = wc.action;
+    } catch {}
+    res.json({ ok: true, activeWarns, action });
   });
 
   // ---- Reload permissions ----
@@ -468,6 +483,66 @@ function createDashboard(client) {
     }
     out.sort((a, b) => a.display.localeCompare(b.display));
     res.json(out);
+  });
+
+  // ---- Stats tickets ----
+  app.get("/api/tickets/stats", requireAuth, async (_req, res) => {
+    const [open, closed] = await Promise.all([
+      prisma.ticket.count({ where: { status: "open" } }),
+      prisma.ticket.count({ where: { status: "closed" } }),
+    ]);
+    const byCat = await prisma.ticket.groupBy({ by: ["category"], _count: { _all: true } });
+    res.json({ open, closed, total: open + closed, byCategory: byCat });
+  });
+
+  // ---- Templates de réponse rapide tickets ----
+  app.get("/api/ticket-templates", requireAuth, async (_req, res) => {
+    const row = await prisma.botSetting.findUnique({ where: { key: "ticketTemplates" } });
+    res.json(row?.value ? JSON.parse(row.value) : []);
+  });
+
+  app.put("/api/ticket-templates", requireAdmin, async (req, res) => {
+    const templates = Array.isArray(req.body.templates) ? req.body.templates.filter((t) => typeof t === "string" && t.trim()) : [];
+    await prisma.botSetting.upsert({
+      where: { key: "ticketTemplates" },
+      update: { value: JSON.stringify(templates) },
+      create: { key: "ticketTemplates", value: JSON.stringify(templates) },
+    });
+    res.json({ ok: true, templates });
+  });
+
+  // ---- Config auto-action warns ----
+  app.get("/api/warn-config", requireAuth, async (_req, res) => {
+    const row = await prisma.botSetting.findUnique({ where: { key: "warnConfig" } });
+    res.json(row?.value ? JSON.parse(row.value) : { max: 3, action: "kick" });
+  });
+
+  app.put("/api/warn-config", requireAdmin, async (req, res) => {
+    const v = { max: Math.max(0, Number(req.body.max) || 0), action: req.body.action === "ban" ? "ban" : "kick" };
+    await prisma.botSetting.upsert({
+      where: { key: "warnConfig" },
+      update: { value: JSON.stringify(v) },
+      create: { key: "warnConfig", value: JSON.stringify(v) },
+    });
+    res.json({ ok: true, config: v });
+  });
+
+  // ---- Export / import réglages (backup) ----
+  app.get("/api/settings/export", requireAdmin, async (_req, res) => {
+    const rows = await prisma.botSetting.findMany();
+    res.json(Object.fromEntries(rows.map((r) => [r.key, r.value])));
+  });
+
+  app.post("/api/settings/import", requireAdmin, async (req, res) => {
+    const data = req.body && typeof req.body === "object" ? req.body : {};
+    let n = 0;
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value !== "string") continue;
+      await prisma.botSetting.upsert({ where: { key }, update: { value }, create: { key, value } });
+      n++;
+    }
+    await botLog("info", `Import réglages : ${n} clés restaurées`);
+    res.json({ ok: true, imported: n });
   });
 
   return app;

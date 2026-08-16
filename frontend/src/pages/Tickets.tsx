@@ -5,11 +5,15 @@ import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { api, type Ticket } from "../lib/api";
 
+interface TicketStats { open: number; closed: number; total: number; byCategory: { category: string; _count: { _all: number } }[] }
+
 export default function Tickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [filter, setFilter] = useState<"open" | "closed" | "all">("open");
   const [replyTarget, setReplyTarget] = useState<Ticket | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [stats, setStats] = useState<TicketStats | null>(null);
+  const [templates, setTemplates] = useState<string[]>([]);
 
   const load = async () => {
     try {
@@ -19,6 +23,13 @@ export default function Tickets() {
   };
 
   useEffect(() => { load(); }, [filter]);
+
+  useEffect(() => {
+    (async () => {
+      try { setStats(await api<TicketStats>("/api/tickets/stats")); } catch {}
+      try { setTemplates(await api<string[]>("/api/ticket-templates")); } catch {}
+    })();
+  }, []);
 
   const doReply = async () => {
     if (!replyTarget || !replyText.trim()) return;
@@ -40,6 +51,15 @@ export default function Tickets() {
 
   return (
     <div className="space-y-4">
+      {stats && (
+        <div className="flex flex-wrap gap-3">
+          <Badge variant="accent">{stats.open} ouvert{stats.open > 1 ? "s" : ""}</Badge>
+          <Badge variant="secondary">{stats.closed} fermé{stats.closed > 1 ? "s" : ""}</Badge>
+          {stats.byCategory.map((c) => (
+            <Badge key={c.category} variant="outline">{c.category} : {c._count._all}</Badge>
+          ))}
+        </div>
+      )}
       <div className="flex gap-2">
         {(["open", "closed", "all"] as const).map((f) => (
           <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)}>
@@ -101,6 +121,32 @@ export default function Tickets() {
         <Card>
           <CardContent className="p-4 space-y-3">
             <p className="font-semibold">Répondre à {replyTarget.username || replyTarget.userId} (envoyé en DM)</p>
+            {templates.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {templates.map((tpl, i) => (
+                  <Button key={i} size="sm" variant="outline" onClick={() => setReplyText(tpl)}>
+                    {tpl.length > 40 ? tpl.slice(0, 40) + "…" : tpl}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1.5 flex-wrap">
+              <Button size="sm" variant="ghost" onClick={async () => {
+                const tpl = prompt("Nouvelle réponse rapide :");
+                if (tpl && tpl.trim()) {
+                  const next = [...templates, tpl.trim()];
+                  await api("/api/ticket-templates", { method: "PUT", body: JSON.stringify({ templates: next }) });
+                  setTemplates(next);
+                }
+              }}>+ Ajouter un template</Button>
+              {templates.length > 0 && (
+                <Button size="sm" variant="ghost" onClick={async () => {
+                  const next = templates.slice(0, -1);
+                  await api("/api/ticket-templates", { method: "PUT", body: JSON.stringify({ templates: next }) });
+                  setTemplates(next);
+                }}>Supprimer le dernier</Button>
+              )}
+            </div>
             <Input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Votre réponse…" />
             <div className="flex gap-2">
               <Button onClick={doReply}>Envoyer</Button>

@@ -78,11 +78,14 @@ export default function Announcements() {
               <Button className="w-full" onClick={save}>Enregistrer</Button>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-2">Préview</p>
-              <div
-                className="rounded-lg bg-muted p-4 min-h-[280px] text-sm prose prose-sm max-w-none dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: marked.parse(content || "*Aperçu…*") }}
-              />
+              <p className="text-xs text-muted-foreground mb-2">Préview embed Discord</p>
+              <div className="rounded-lg bg-[#2b2d31] border-l-4 border-[#0099ff] p-4 min-h-[280px] overflow-hidden">
+                {title && <div className="text-white font-semibold mb-2">{title}</div>}
+                <div
+                  className="text-sm text-[#dbdee1] prose prose-sm max-w-none prose-invert"
+                  dangerouslySetInnerHTML={{ __html: marked.parse(content || "*Aperçu…*") }}
+                />
+              </div>
             </div>
           </div>
         </CardContent>

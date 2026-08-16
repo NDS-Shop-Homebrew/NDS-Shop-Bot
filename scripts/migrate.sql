@@ -84,9 +84,15 @@ CREATE TABLE IF NOT EXISTS `bot_warn` (
     `discordId` TEXT NOT NULL,
     `modId` TEXT NULL,
     `reason` TEXT NULL,
+    `expiresAt` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Ajout idempotent de expiresAt si la table existait sans cette colonne
+SET @col := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bot_warn' AND COLUMN_NAME = 'expiresAt');
+SET @sql := IF(@col = 0, 'ALTER TABLE `bot_warn` ADD COLUMN `expiresAt` DATETIME(3) NULL', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS `bot_dm_contact` (
     `id` VARCHAR(191) NOT NULL,

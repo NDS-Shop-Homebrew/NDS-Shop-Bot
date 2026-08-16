@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Ticket, Megaphone, Gamepad2, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages, MessageSquare, ShieldBan, ChevronDown, MoreHorizontal, Hash } from "lucide-react";
+import { LayoutDashboard, Ticket, Megaphone, Gamepad2, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages, MessageSquare, ShieldBan, ChevronDown, MoreHorizontal, Hash, Terminal, Trophy } from "lucide-react";
 import { UIProvider, useUI } from "./context/UIContext";
 import { api, logout } from "./lib/api";
 import { cn } from "./lib/utils";
@@ -17,8 +17,10 @@ import Send from "./pages/Send";
 import Logs from "./pages/Logs";
 import Settings from "./pages/Settings";
 import Channels from "./pages/Channels";
+import Commands from "./pages/Commands";
+import Leaderboard from "./pages/Leaderboard";
 
-type Tab = "overview" | "tickets" | "announcements" | "games" | "users" | "permissions" | "messages" | "blacklist" | "send" | "logs" | "settings" | "channels";
+type Tab = "overview" | "tickets" | "announcements" | "games" | "users" | "permissions" | "messages" | "blacklist" | "send" | "logs" | "settings" | "channels" | "commands" | "leaderboard";
 
 const MAIN_TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "overview", icon: LayoutDashboard, key: "nav.overview" },
@@ -32,12 +34,14 @@ const ADMIN_TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "users", icon: UsersIcon, key: "nav.users" },
   { id: "permissions", icon: ShieldCheck, key: "nav.permissions" },
   { id: "blacklist", icon: ShieldBan, key: "nav.blacklist" },
+  { id: "commands", icon: Terminal, key: "nav.commands" },
 ];
 
 const SYST_TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "channels", icon: Hash, key: "nav.channels" },
   { id: "send", icon: SendIcon, key: "nav.send" },
   { id: "logs", icon: ScrollText, key: "nav.logs" },
+  { id: "leaderboard", icon: Trophy, key: "nav.leaderboard" },
   { id: "settings", icon: SettingsIcon, key: "nav.settings" },
 ];
 
@@ -195,6 +199,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {tab === "logs" && <Logs />}
           {tab === "channels" && <Channels />}
           {tab === "settings" && <Settings />}
+          {tab === "commands" && <Commands />}
+          {tab === "leaderboard" && <Leaderboard />}
         </motion.div>
       </main>
     </div>

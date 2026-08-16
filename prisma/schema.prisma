@@ -196,6 +196,7 @@ model Warn {
   discordId String    @db.Text
   modId     String?   @db.Text
   reason    String?   @db.Text
+  expiresAt DateTime?
   createdAt DateTime  @default(now())
 
   @@map("bot_warn")
