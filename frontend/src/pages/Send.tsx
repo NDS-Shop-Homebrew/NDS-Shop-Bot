@@ -3,7 +3,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { api, type Channel } from "../lib/api";
+import { api, listChannels, type Channel } from "../lib/api";
 
 export default function Send() {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -14,7 +14,7 @@ export default function Send() {
   useEffect(() => {
     (async () => {
       try {
-        const ch = await api<Channel[]>("/api/channels");
+        const ch = await listChannels();
         setChannels(ch);
         if (ch.length) setChannel(ch[0].name);
       } catch {}

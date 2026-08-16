@@ -6,7 +6,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { api, type Announcement, type Channel } from "../lib/api";
+import { api, listChannels, type Announcement, type Channel } from "../lib/api";
 
 export default function Announcements() {
   const [items, setItems] = useState<Announcement[]>([]);
@@ -18,7 +18,7 @@ export default function Announcements() {
   const load = async () => {
     try { setItems(await api<Announcement[]>("/api/announcements")); } catch {}
     try {
-      const ch = await api<Channel[]>("/api/channels");
+      const ch = await listChannels();
       setChannels(ch);
       if (!channel && ch.length) setChannel(ch[0].name);
     } catch {}

@@ -51,6 +51,12 @@ export interface StatusData {
 }
 
 export interface Channel { id: string; name: string; parent: string }
+export interface Category { id: string; name: string; perms: unknown[]; channels: { id: string; name: string; perms: unknown[] }[] }
+
+export async function listChannels(): Promise<Channel[]> {
+  const cats = await api<Category[]>("/api/channels");
+  return cats.flatMap((c) => c.channels.map((ch) => ({ id: ch.id, name: ch.name, parent: c.name })));
+}
 export interface Announcement { id: string; title: string; content: string; channel: string; status: string; createdAt: string; sentAt: string | null }
 export interface Ticket { id: string; userId: string; username: string | null; category: string; status: string; createdAt: string; closedAt: string | null; messages: TicketMessage[] }
 export interface TicketMessage { id: string; author: string; content: string; direction: string; createdAt: string }
