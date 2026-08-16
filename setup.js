@@ -1,5 +1,7 @@
 // Setup one-shot du serveur Discord NDS-Shop via le bot.
-// Usage : node setup.js
+// Usage : node setup.js [--force]
+//   --force : supprime l'existant (salons/catégories) avant recréation.
+//   sans --force : crée uniquement les rôles/catégories/salons manquants.
 // Prérequis : token dans .env, bot invité avec Manage Channels + Manage Roles.
 const { Client, GatewayIntentBits, ChannelType, PermissionFlagsBits } = require("discord.js");
 require("dotenv").config();
@@ -9,7 +11,7 @@ const GUILD_ID = "1271186486070345843";
 const KEEP_CHANNEL_NAMES = ["annonces"];
 
 const config = {
-  deleteExisting: true,
+  deleteExisting: process.argv.includes("--force"),
   roles: [
     { name: "Admin", color: "#E74C3C" },
     { name: "Modérateur", color: "#2ECC71" },

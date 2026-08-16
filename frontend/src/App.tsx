@@ -45,6 +45,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   const { t, lang, setLang, dark, toggleDark } = useUI();
   const [tab, setTab] = useState<Tab>("overview");
   const [user, setUser] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [systOpen, setSystOpen] = useState(false);
   const adminRef = useRef<HTMLDivElement>(null);
@@ -63,23 +64,19 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     (async () => {
       try {
-        const s = await api<{ user: { username?: string; email?: string } | null }>("/api/session");
+        const s = await api<{ user: { username?: string; email?: string; role?: string } | null }>("/api/session");
         setUser(s.user?.username || s.user?.email || "");
+        setIsAdmin(s.user?.role === "admin");
       } catch {}
     })();
   }, []);
 
+  // Repli vers un onglet autorisé si le rôle change ou si on est sur un onglet interdit
   const isAdminTab = ADMIN_TABS.some((a) => a.id === tab);
   const isSystTab = SYST_TABS.some((s) => s.id === tab);
-
   useEffect(() => {
-    (async () => {
-      try {
-        const s = await api<{ user: { username?: string; email?: string } | null }>("/api/session");
-        setUser(s.user?.username || s.user?.email || "");
-      } catch {}
-    })();
-  }, []);
+    if (!isAdmin && (isAdminTab || isSystTab)) setTab("overview");
+  }, [isAdmin, isAdminTab, isSystTab]);
 
   return (
     <div className="min-h-screen">
@@ -121,7 +118,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             </button>
           ))}
 
-          {/* Dropdown Admin */}
+          {/* Dropdown Admin + Système (réservés aux admins) */}
+          {isAdmin && (<>
           <div ref={adminRef} className="relative">
             <button
               onClick={() => setAdminOpen(!adminOpen)}
@@ -178,6 +176,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
               </div>
             )}
           </div>
+          </>)}
         </nav>
       </header>
 

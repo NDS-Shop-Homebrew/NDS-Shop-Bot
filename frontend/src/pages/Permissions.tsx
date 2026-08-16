@@ -7,6 +7,7 @@ import { api } from "../lib/api";
 interface PermData {
   matrix: Record<string, string[]>;
   roles: string[];
+  commands: string[];
 }
 
 export default function Permissions() {
@@ -40,7 +41,7 @@ export default function Permissions() {
 
   if (!data) return null;
 
-  const commands = Object.keys(matrix).sort();
+  const commands = (data.commands || Object.keys(matrix)).sort();
   const displayRoles = data.roles.filter((r) => r !== "@everyone");
 
   return (

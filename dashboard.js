@@ -30,6 +30,17 @@ function createDashboard(client) {
     next();
   }
 
+  // Routes sensibles : réservées aux comptes admin (User.role === "admin")
+  async function requireAdmin(req, res, next) {
+    const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
+    if (!session) return res.status(401).json({ error: "Non connecté" });
+    if (session.user.role !== "admin") {
+      return res.status(403).json({ error: "Accès réservé aux administrateurs" });
+    }
+    req.user = session.user;
+    next();
+  }
+
   function guildInfo() {
     const guild = client?.guilds?.cache.get(GUILD_ID) || null;
     if (!guild) return null;
@@ -46,7 +57,6 @@ function createDashboard(client) {
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
     res.json({ user: session?.user || null });
   });
-
   // ---- Status ----
   app.get("/api/status", requireAuth, async (req, res) => {
     const guild = guildInfo();
@@ -111,7 +121,7 @@ function createDashboard(client) {
   });
 
   // Resynchronise chaque salon avec sa catégorie (hérite des perms de la catégorie)
-  app.post("/api/channels/sync", requireAuth, async (_req, res) => {
+  app.post("/api/channels/sync", requireAdmin, async (_req, res) => {
     const guild = client?.guilds?.cache.get(GUILD_ID);
     if (!guild) return res.status(400).json({ error: "Bot hors ligne" });
     let synced = 0;
@@ -133,7 +143,7 @@ function createDashboard(client) {
     res.json(items);
   });
 
-  app.post("/api/announcements", requireAuth, async (req, res) => {
+  app.post("/api/announcements", requireAdmin, async (req, res) => {
     const { title, content, channel } = req.body;
     if (!title || !content || !channel) {
       return res.status(400).json({ error: "title, content, channel requis" });
@@ -145,7 +155,7 @@ function createDashboard(client) {
     res.json(item);
   });
 
-  app.put("/api/announcements/:id", requireAuth, async (req, res) => {
+  app.put("/api/announcements/:id", requireAdmin, async (req, res) => {
     const { title, content, channel } = req.body;
     const item = await prisma.botAnnouncement.update({
       where: { id: req.params.id },
@@ -154,13 +164,13 @@ function createDashboard(client) {
     res.json(item);
   });
 
-  app.delete("/api/announcements/:id", requireAuth, async (req, res) => {
+  app.delete("/api/announcements/:id", requireAdmin, async (req, res) => {
     await prisma.botAnnouncement.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   });
 
   // Envoi d'une annonce par le bot (statut -> sent)
-  app.post("/api/announcements/:id/send", requireAuth, async (req, res) => {
+  app.post("/api/announcements/:id/send", requireAdmin, async (req, res) => {
     const item = await prisma.botAnnouncement.findUnique({ where: { id: req.params.id } });
     if (!item) return res.status(404).json({ error: "Annonce introuvable" });
 
@@ -184,7 +194,7 @@ function createDashboard(client) {
   });
 
   // ---- Message ad-hoc vers un salon ----
-  app.post("/api/send", requireAuth, async (req, res) => {
+  app.post("/api/send", requireAdmin, async (req, res) => {
     const { channelId, content } = req.body;
     if (!channelId || !content) return res.status(400).json({ error: "channelId, content requis" });
     const guild = client?.guilds?.cache.get(GUILD_ID);
@@ -216,7 +226,7 @@ function createDashboard(client) {
     res.json(settings);
   });
 
-  app.put("/api/settings/:key", requireAuth, async (req, res) => {
+  app.put("/api/settings/:key", requireAdmin, async (req, res) => {
     const { key } = req.params;
     const value = String(req.body.value ?? "");
     await prisma.botSetting.upsert({
@@ -228,7 +238,7 @@ function createDashboard(client) {
   });
 
   // ---- Déclenchement manuel du poll de nouveaux jeux ----
-  app.post("/api/poll", requireAuth, async (_req, res) => {
+  app.post("/api/poll", requireAdmin, async (_req, res) => {
     try {
       if (typeof client?.pollNow === "function") {
         await client.pollNow();
@@ -253,7 +263,7 @@ function createDashboard(client) {
     res.json(tickets);
   });
 
-  app.post("/api/tickets/:id/reply", requireAuth, async (req, res) => {
+  app.post("/api/tickets/:id/reply", requireAdmin, async (req, res) => {
     const { content } = req.body;
     if (!content) return res.status(400).json({ error: "content requis" });
     const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id } });
@@ -267,13 +277,13 @@ function createDashboard(client) {
     res.json({ ok: true });
   });
 
-  app.post("/api/tickets/:id/close", requireAuth, async (req, res) => {
+  app.post("/api/tickets/:id/close", requireAdmin, async (req, res) => {
     const { closeTicket } = require("./lib/tickets");
     await closeTicket(client, req.params.id, req.user.username);
     res.json({ ok: true });
   });
 
-  app.post("/api/tickets/:id/reopen", requireAuth, async (req, res) => {
+  app.post("/api/tickets/:id/reopen", requireAdmin, async (req, res) => {
     await prisma.ticket.update({ where: { id: req.params.id }, data: { status: "open", closedAt: null } });
     res.json({ ok: true });
   });
@@ -306,7 +316,7 @@ function createDashboard(client) {
     res.json(row?.value ? JSON.parse(row.value) : { enabled: true, xpPerMessage: 15, excludedChannels: [], roles: [] });
   });
 
-  app.put("/api/leveling", requireAuth, async (req, res) => {
+  app.put("/api/leveling", requireAdmin, async (req, res) => {
     await prisma.botSetting.upsert({
       where: { key: "levelingConfig" },
       update: { value: JSON.stringify(req.body) },
@@ -318,10 +328,12 @@ function createDashboard(client) {
   // ---- Permissions matrix ----
   app.get("/api/permissions", requireAuth, async (_req, res) => {
     const { getMatrix, ROLE_ORDER } = require("./lib/permissions");
-    res.json({ matrix: await getMatrix(), roles: ROLE_ORDER });
+    const fs = require("fs");
+    const cmds = fs.readdirSync(path.join(__dirname, "commands")).filter((f) => f.endsWith(".js")).map((f) => f.replace(/\.js$/, ""));
+    res.json({ matrix: await getMatrix(), roles: ROLE_ORDER, commands: cmds });
   });
 
-  app.put("/api/permissions", requireAuth, async (req, res) => {
+  app.put("/api/permissions", requireAdmin, async (req, res) => {
     const { saveMatrix } = require("./lib/permissions");
     await saveMatrix(req.body.matrix || {});
     res.json({ ok: true });
@@ -339,7 +351,7 @@ function createDashboard(client) {
     res.json(await prisma.blacklist.findMany({ orderBy: { createdAt: "desc" } }));
   });
 
-  app.post("/api/blacklist", requireAuth, async (req, res) => {
+  app.post("/api/blacklist", requireAdmin, async (req, res) => {
     const { discordId, reason } = req.body;
     if (!discordId) return res.status(400).json({ error: "discordId requis" });
     await prisma.blacklist.upsert({
@@ -350,13 +362,13 @@ function createDashboard(client) {
     res.json({ ok: true });
   });
 
-  app.delete("/api/blacklist/:discordId", requireAuth, async (req, res) => {
+  app.delete("/api/blacklist/:discordId", requireAdmin, async (req, res) => {
     await prisma.blacklist.delete({ where: { discordId: req.params.discordId } }).catch(() => {});
     res.json({ ok: true });
   });
 
   // ---- Warn un utilisateur depuis le dashboard ----
-  app.post("/api/warn", requireAuth, async (req, res) => {
+  app.post("/api/warn", requireAdmin, async (req, res) => {
     const { discordId, reason } = req.body;
     if (!discordId) return res.status(400).json({ error: "discordId requis" });
     await prisma.warn.create({
@@ -367,7 +379,7 @@ function createDashboard(client) {
   });
 
   // ---- Reload permissions ----
-  app.post("/api/reload", requireAuth, async (_req, res) => {
+  app.post("/api/reload", requireAdmin, async (_req, res) => {
     const { reloadMatrix } = require("./lib/permissions");
     await reloadMatrix();
     res.json({ ok: true });
@@ -388,7 +400,7 @@ function createDashboard(client) {
   });
 
   // Envoyer un MP (nouveau ou réponse) + enregistré
-  app.post("/api/dm", requireAuth, async (req, res) => {
+  app.post("/api/dm", requireAdmin, async (req, res) => {
     const { userId, content } = req.body;
     if (!userId || !content) return res.status(400).json({ error: "userId, content requis" });
     const { recordOutgoing } = require("./lib/dm");
@@ -404,7 +416,7 @@ function createDashboard(client) {
   });
 
   // Supprimer une conversation entière
-  app.delete("/api/dm/:userId", requireAuth, async (req, res) => {
+  app.delete("/api/dm/:userId", requireAdmin, async (req, res) => {
     try {
       const contact = await prisma.botDmContact.findUnique({ where: { discordId: req.params.userId } });
       if (contact) await prisma.botDmContact.delete({ where: { id: contact.id } });
@@ -415,7 +427,7 @@ function createDashboard(client) {
   });
 
   // Supprimer un message spécifique
-  app.delete("/api/dm/messages/:messageId", requireAuth, async (req, res) => {
+  app.delete("/api/dm/messages/:messageId", requireAdmin, async (req, res) => {
     try {
       await prisma.botDmMessage.delete({ where: { id: req.params.messageId } }).catch(() => {});
       res.json({ ok: true });
