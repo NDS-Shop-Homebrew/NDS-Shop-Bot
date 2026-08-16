@@ -16,6 +16,7 @@ export default function Settings() {
   const [poll, setPoll] = useState("300000");
   const [levelEnabled, setLevelEnabled] = useState("true");
   const [gameInfo, setGameInfo] = useState("");
+  const [gameInfoCount, setGameInfoCount] = useState("5");
   const [warnMax, setWarnMax] = useState("3");
   const [warnAction, setWarnAction] = useState("kick");
 
@@ -26,6 +27,7 @@ export default function Settings() {
         setWelcome(s.welcomeMessage || "");
         setPoll(s.pollInterval || "300000");
         setGameInfo(s.gameInfoTemplate || "");
+        setGameInfoCount(s.gameInfoCount || "5");
         const l = await api<Leveling>("/api/leveling");
         setLeveling(l);
         setLevelEnabled(String(l.enabled));
@@ -92,6 +94,11 @@ export default function Settings() {
             />
             <p className="text-xs text-muted-foreground">Variables disponibles : <code>{"{{title}}"}</code> <code>{"{{author}}"}</code> <code>{"{{version}}"}</code> <code>{"{{systems}}"}</code> <code>{"{{titleId}}"}</code> <code>{"{{stars}}"}</code> <code>{"{{downloadUrl}}"}</code> <code>{"{{gameUrl}}"}</code> <code>{"{{updated}}"}</code> — la boxart et l'icône sont affichées automatiquement dans l'embed.</p>
             <Button onClick={() => saveSetting("gameInfoTemplate", gameInfo)}>Enregistrer</Button>
+          </div>
+          <div className="space-y-2">
+            <Label>Nombre de jeux affichés dans #game-info</Label>
+            <Input type="number" min={1} max={20} value={gameInfoCount} onChange={(e) => setGameInfoCount(e.target.value)} className="max-w-[120px]" />
+            <Button onClick={() => saveSetting("gameInfoCount", gameInfoCount)}>Enregistrer</Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
             <div className="space-y-2">

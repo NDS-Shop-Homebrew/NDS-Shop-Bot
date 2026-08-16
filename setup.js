@@ -8,39 +8,40 @@ require("dotenv").config();
 
 const GUILD_ID = "1271186486070345843";
 // Salons existants à conserver (déplacés dans leur catégorie, pas supprimés)
-const KEEP_CHANNEL_NAMES = ["annonces"];
+const KEEP_CHANNEL_NAMES = ["announcements"];
 
 const config = {
   deleteExisting: process.argv.includes("--force"),
   roles: [
     { name: "Admin", color: "#E74C3C" },
-    { name: "Modérateur", color: "#2ECC71" },
-    { name: "Développeur", color: "#5865F2" },
+    { name: "Moderator", color: "#2ECC71" },
+    { name: "Developer", color: "#5865F2" },
     { name: "Tester", color: "#F1C40F" },
-    { name: "Contributeur", color: "#9B59B6" },
-    { name: "Membre", color: "#95A5A6" },
-    { name: "Français", color: "#3498DB" },
+    { name: "Contributor", color: "#9B59B6" },
+    { name: "Member", color: "#95A5A6" },
+    { name: "French", color: "#3498DB" },
     { name: "English", color: "#1ABC9C" },
+    { name: "Game Updates", color: "#00B0F4", mentionable: true },
   ],
   // view :
   //   "@everyone"  → visible par tous
   //   [rôles]      → visible UNIQUEMENT par ces rôles (@everyone voit rien)
   categories: [
     {
-      name: "📢 INFORMATIONS",
+      name: "📢 INFORMATION",
       view: "@everyone",
       channels: [
-        { name: "règles", readOnly: true, topic: "Règles du serveur — à lire avant de participer." },
-        { name: "annonces", readOnly: true, staffPing: true, keep: true, topic: "Annonces officielles du projet NDS-Shop." },
-        { name: "annonces-jeux", readOnly: true, topic: "Nouveaux jeux ajoutés au catalogue — automatique." },
-        { name: "game-info", readOnly: true, topic: "Dernier jeu ajouté au catalogue — mis à jour automatiquement." },
-        { name: "changelog", readOnly: true, topic: "Historique des mises à jour du site et du catalogue." },
-        { name: "roles", readOnly: true, topic: "Réagissez avec votre langue 🇫🇷/🇬🇧 pour accéder aux salons." },
+        { name: "rules", readOnly: true, topic: "Server rules — read before joining in." },
+        { name: "announcements", readOnly: true, staffPing: true, keep: true, topic: "Official NDS-Shop project announcements." },
+        { name: "game-announcements", readOnly: true, topic: "New games added to the catalogue — automatic." },
+        { name: "game-info", readOnly: true, topic: "Latest games added to the catalogue — updated automatically." },
+        { name: "changelog", readOnly: true, topic: "Site and catalogue update history." },
+        { name: "roles", readOnly: true, topic: "React with your language 🇫🇷/🇬🇧 to unlock the channels." },
       ],
     },
     {
       name: "🗨️ COMMUNAUTÉ FR",
-      view: ["Membre", "Français"],
+      view: ["Member", "French"],
       channels: [
         { name: "général", topic: "Discussions générales en français — bienvenue !" },
         { name: "nintendo-ds", topic: "Tout sur la Nintendo DS : jeux, astuces, bons plans." },
@@ -51,7 +52,7 @@ const config = {
     },
     {
       name: "🌍 COMMUNITY EN",
-      view: ["Membre", "English"],
+      view: ["Member", "English"],
       channels: [
         { name: "general", topic: "General discussions in English — welcome!" },
         { name: "nintendo-ds", topic: "Everything Nintendo DS: games, tips, deals." },
@@ -61,44 +62,44 @@ const config = {
       ],
     },
     {
-      name: "🛠️ PROJET",
-      view: ["Membre"],
+      name: "🛠️ PROJECT",
+      view: ["Member"],
       channels: [
-        { name: "site-dev", topic: "Discussions autour du développement du site db-nds-shop.fr." },
-        { name: "app-dev", topic: "Développement de l'application NDS-Shop (3DS/DSi)." },
-        { name: "bug-reports", topic: "Signalez les bugs du site, de l'app ou du catalogue." },
-        { name: "suggestions", topic: "Propositions d'améliorations pour tout le projet." },
+        { name: "site-dev", topic: "Discussions around db-nds-shop.fr development." },
+        { name: "app-dev", topic: "NDS-Shop application development (3DS/DSi)." },
+        { name: "bug-reports", topic: "Report site, app, or catalogue bugs." },
+        { name: "suggestions", topic: "Improvement proposals for the whole project." },
       ],
     },
     {
-      name: "🔒 ÉQUIPE",
-      view: ["Admin", "Modérateur", "Développeur", "Tester"],
+      name: "🔒 TEAM",
+      view: ["Admin", "Moderator", "Developer", "Tester"],
       channels: [
-        { name: "dev-zone", topic: "Zone de développement : discussions techniques, revue de code." },
-        { name: "testeurs", topic: "Espace testeurs : versions beta, retours, bugs." },
-        { name: "moderation", topic: "Espace de modération : coordination de l'équipe." },
+        { name: "dev-zone", topic: "Development zone: technical discussions, code review." },
+        { name: "testers", topic: "Tester space: beta versions, feedback, bugs." },
+        { name: "moderation", topic: "Moderation space: team coordination." },
       ],
     },
     {
       name: "🎫 TICKETS",
-      view: ["Admin", "Modérateur", "Développeur", "Tester"],
-      channels: [{ name: "tickets-readme", topic: "Les tickets sont gérés automatiquement par le bot. DM le bot pour ouvrir un ticket." }],
+      view: ["Admin", "Moderator", "Developer", "Tester"],
+      channels: [{ name: "tickets-readme", topic: "Tickets are handled automatically by the bot. DM the bot to open a ticket." }],
     },
     {
       name: "📋 LOGS",
-      view: ["Admin", "Modérateur", "Développeur", "Tester"],
+      view: ["Admin", "Moderator", "Developer", "Tester"],
       channels: [
-        { name: "log-messages", topic: "Messages supprimés/édités (logs de modération)." },
-        { name: "log-tickets", topic: "Activité des tickets : ouverture, fermeture, réponses." },
-        { name: "log-commands", topic: "Utilisation des commandes du bot." },
-        { name: "log-errors", topic: "Erreurs et avertissements du bot." },
+        { name: "log-messages", topic: "Deleted/edited messages (moderation logs)." },
+        { name: "log-tickets", topic: "Ticket activity: opening, closing, replies." },
+        { name: "log-commands", topic: "Bot command usage." },
+        { name: "log-errors", topic: "Bot errors and warnings." },
       ],
     },
   ],
 };
 
 // Rôles staff autorisés à mentionner @everyone sur les salons staffPing
-const STAFF_PING_ROLES = ["Admin", "Modérateur", "Développeur"];
+const STAFF_PING_ROLES = ["Admin", "Moderator", "Developer"];
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -119,7 +120,7 @@ client.once("clientReady", async () => {
       if (roleByName[def.name]) {
         console.log(`  rôle ${def.name} : déjà présent`);
       } else {
-        const r = await guild.roles.create({ name: def.name, color: def.color });
+        const r = await guild.roles.create({ name: def.name, color: def.color, mentionable: !!def.mentionable });
         roleByName[def.name] = r;
         console.log(`  rôle ${def.name} : créé`);
       }

@@ -12,7 +12,7 @@ interface PermData {
 }
 
 // Hiérarchie des rôles (du moins au plus élevé)
-const HIERARCHY = ["@everyone", "Membre", "Contributeur", "Tester", "Développeur", "Modérateur", "Admin"];
+const HIERARCHY = ["@everyone", "Member", "Contributor", "Tester", "Developer", "Moderator", "Admin"];
 
 const CATEGORIES: { name: string; commands: string[] }[] = [
   { name: "Modération", commands: ["warn", "kick", "ban", "unban", "mute", "unmute", "lock", "unlock", "purge", "blacklist", "announce", "embed", "dm", "tickets", "levelconfig", "reload"] },

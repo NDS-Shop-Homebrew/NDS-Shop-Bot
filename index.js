@@ -12,7 +12,7 @@ const {
 } = require("discord.js");
 require("dotenv").config();
 
-const { GUILD_ID, ROLE_MENU, ROLE_CHANNEL, ROLE_MEMBRE, ROLE_MENU_MESSAGE_ID, CHANNELS, POLL_INTERVAL_MS } = require("./config");
+const { GUILD_ID, ROLE_MENU, ROLE_CHANNEL, ROLE_MEMBRE, ROLE_MENU_MESSAGE_ID, ROLE_GAME_UPDATES, CHANNELS, POLL_INTERVAL_MS } = require("./config");
 const { listGames } = require("./lib/api");
 const { T } = require("./lib/lang");
 const { botLog } = require("./lib/botLog");
@@ -54,8 +54,8 @@ async function postRoleMenu(client) {
     .setColor("#5865F2")
     .setTitle("Choix de langue / Language selection")
     .setDescription(
-      "Réagissez avec votre langue pour accéder aux salons. Vous aurez automatiquement le rôle **Membre**.\n\n" +
-        "React with your language to unlock the channels. You will automatically get the **Membre** role.\n\n" +
+      "Réagissez avec votre langue pour accéder aux salons. Vous aurez automatiquement le rôle **Member**.\n\n" +
+        "React with your language to unlock the channels. You will automatically get the **Member** role.\n\n" +
         Object.entries(ROLE_MENU)
           .map(([emoji, role]) => `${emoji} → ${role}`)
           .join("\n") +
@@ -135,19 +135,26 @@ async function announceGame(client, g) {
   if (channel) await channel.send({ embeds: [embed] });
 }
 
-// Met à jour #game-info avec le dernier jeu ajouté (template éditable en base)
-async function updateGameInfo(client, force = false) {
+// Met à jour #game-info avec les N derniers jeux ajoutés (template éditable en base)
+async function updateGameInfo(client, force = false, ping = false) {
   const guild = client.guilds.cache.get(GUILD_ID);
   const channel = guild?.channels.cache.find((c) => c.name === CHANNELS.gameInfo && c.isTextBased());
   if (!channel || gamesCache.length === 0) return;
 
-  const latest = [...gamesCache].sort((a, b) => new Date(b.updated) - new Date(a.updated))[0];
-  if (!latest) return;
+  let count = 5;
+  try {
+    const countRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoCount" } });
+    const v = countRow && Number(countRow.value);
+    if (v && v > 0) count = v;
+  } catch {}
+
+  const latest = [...gamesCache].sort((a, b) => new Date(b.updated) - new Date(a.updated)).slice(0, count);
+  if (!latest.length) return;
 
   const tplRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoTemplate" } });
   const template = tplRow?.value || DEFAULT_TEMPLATE;
-  const embed = buildEmbed(template, latest, "#0099ff");
-  const payload = { embeds: [embed] };
+  const embeds = latest.map((g) => buildEmbed(template, g, "#0099ff"));
+  const payload = { embeds };
   const hash = JSON.stringify(payload);
 
   // Ne ré-édite pas si rien n'a changé (évite le "modifié" permanent sur Discord)
@@ -176,6 +183,15 @@ async function updateGameInfo(client, force = false) {
       update: { value: hash },
       create: { key: "gameInfoHash", value: hash },
     });
+
+    // Ping du rôle Game Updates quand un nouveau jeu vient d'être ajouté
+    if (ping) {
+      const role = guild.roles.cache.find((r) => r.name === ROLE_GAME_UPDATES && r.mentionable);
+      if (role) {
+        const titles = latest.slice(0, 3).map((g) => `**${g.title}**`).join(", ");
+        await channel.send(`<@&${role.id}> — ${titles}${latest.length > 3 ? ` +${latest.length - 3}` : ""}`).catch(() => {});
+      }
+    }
   } catch (err) {
     await botLog("error", `#game-info : ${err.message}`);
   }
@@ -186,8 +202,8 @@ async function ensureChannels(client) {
   const guild = client.guilds.cache.get(GUILD_ID);
   if (!guild) return;
   const desired = [
-    { name: CHANNELS.gameInfo, parent: "📢 INFORMATIONS", topic: "Dernier jeu ajouté au catalogue — mis à jour automatiquement." },
-    { name: "welcome", parent: "📢 INFORMATIONS", topic: "Bienvenue ! Présentez-vous et dites bonjour." },
+    { name: CHANNELS.gameInfo, parent: "📢 INFORMATION", topic: "Derniers jeux ajoutés au catalogue — mis à jour automatiquement." },
+    { name: "welcome", parent: "📢 INFORMATION", topic: "Welcome! Introduce yourself and say hi." },
   ];
   for (const d of desired) {
     const exists = guild.channels.cache.some((c) => c.name === d.name && c.type === ChannelType.GuildText);
@@ -237,7 +253,7 @@ async function pollNewGames(client) {
       create: { key: "knownGames", value: JSON.stringify(Object.fromEntries(gamesCache.map((g) => [g.fileName, 1]))) },
     });
 
-    await updateGameInfo(client);
+    await updateGameInfo(client, false, added.length > 0);
   } catch (err) {
     await botLog("error", `Poll: ${err.message}`);
   }

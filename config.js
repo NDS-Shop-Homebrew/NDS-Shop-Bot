@@ -6,16 +6,19 @@ module.exports = {
 
   // Choix de rôle (#roles)
   ROLE_CHANNEL: "roles",
-  ROLE_MEMBRE: "Membre",
+  ROLE_MEMBRE: "Member",
   ROLE_MENU: {
-    "🇫🇷": "Français",
+    "🇫🇷": "French",
     "🇬🇧": "English",
   },
   ROLE_MENU_MESSAGE_ID: process.env.ROLE_MENU_MESSAGE_ID || "",
 
+  // Rôle pingué dans #game-info quand un nouveau jeu arrive
+  ROLE_GAME_UPDATES: "Game Updates",
+
   // Salons cibles (LOGS)
   CHANNELS: {
-    annoncesJeux: "annonces-jeux",
+    annoncesJeux: "game-announcements",
     gameInfo: "game-info",
     suggestions: "suggestions",
     bugReports: "bug-reports",
