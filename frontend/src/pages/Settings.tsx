@@ -82,10 +82,10 @@ export default function Settings() {
               value={gameInfo}
               onChange={(e) => setGameInfo(e.target.value)}
               rows={5}
-              placeholder="Variables : {{title}} {{author}} {{version}} {{systems}} {{icon}} {{boxart}} {{downloadUrl}} {{gameUrl}} {{updated}}"
+              placeholder="Variables : {{title}} {{author}} {{version}} {{systems}} {{titleId}} {{stars}} {{downloadUrl}} {{gameUrl}} {{updated}}"
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
-            <p className="text-xs text-muted-foreground">Variables disponibles : <code>{"{{title}}"}</code> <code>{"{{author}}"}</code> <code>{"{{version}}"}</code> <code>{"{{systems}}"}</code> <code>{"{{icon}}"}</code> <code>{"{{boxart}}"}</code> <code>{"{{downloadUrl}}"}</code> <code>{"{{gameUrl}}"}</code> <code>{"{{updated}}"}</code></p>
+            <p className="text-xs text-muted-foreground">Variables disponibles : <code>{"{{title}}"}</code> <code>{"{{author}}"}</code> <code>{"{{version}}"}</code> <code>{"{{systems}}"}</code> <code>{"{{titleId}}"}</code> <code>{"{{stars}}"}</code> <code>{"{{downloadUrl}}"}</code> <code>{"{{gameUrl}}"}</code> <code>{"{{updated}}"}</code> — la boxart et l'icône sont affichées automatiquement dans l'embed.</p>
             <Button onClick={() => saveSetting("gameInfoTemplate", gameInfo)}>Enregistrer</Button>
           </div>
           <div className="pt-4 border-t border-border">

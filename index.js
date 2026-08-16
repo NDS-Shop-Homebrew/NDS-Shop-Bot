@@ -18,7 +18,7 @@ const { T } = require("./lib/lang");
 const { botLog } = require("./lib/botLog");
 const { canUse, loadMatrix } = require("./lib/permissions");
 const { sendTicketMenu, createTicket, relayMessage, closeTicket } = require("./lib/tickets");
-const { renderTemplate, DEFAULT_TEMPLATE } = require("./lib/gameInfo");
+const { buildEmbed, DEFAULT_TEMPLATE } = require("./lib/gameInfo");
 const prisma = require("./lib/db");
 
 // ---- Chargement des commandes slash ----
@@ -146,7 +146,8 @@ async function updateGameInfo(client, force = false) {
 
   const tplRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoTemplate" } });
   const template = tplRow?.value || DEFAULT_TEMPLATE;
-  const content = renderTemplate(template, latest);
+  const embed = buildEmbed(template, latest, "#0099ff");
+  const payload = { embeds: [embed] };
 
   try {
     const msgRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoMessageId" } });
@@ -154,9 +155,9 @@ async function updateGameInfo(client, force = false) {
     const cached = msgId ? channel.messages.cache.get(msgId) : null;
     const msg = cached || (msgId ? await channel.messages.fetch(msgId).catch(() => null) : null);
     if (msg) {
-      await msg.edit(content);
+      await msg.edit(payload);
     } else {
-      const sent = await channel.send(content);
+      const sent = await channel.send(payload);
       await prisma.botSetting.upsert({
         where: { key: "gameInfoMessageId" },
         update: { value: sent.id },

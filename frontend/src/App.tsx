@@ -107,7 +107,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           </div>
         </div>
         {/* Tabs */}
-        <nav className="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto pb-2">
+        <nav className="max-w-7xl mx-auto px-4 flex flex-wrap items-center gap-1 pb-2">
           {MAIN_TABS.map((t2) => (
             <button
               key={t2.id}
