@@ -295,9 +295,10 @@ function createDashboard(client) {
     const profiles = await prisma.userProfile.findMany({ orderBy: { xp: "desc" }, take: limit });
     const guild = client?.guilds?.cache.get(GUILD_ID);
     const out = [];
+    const members = await guild?.members?.fetch().catch(() => null);
     for (const p of profiles) {
       if (search && !p.discordId.includes(search)) continue;
-      const member = guild?.members?.cache.get(p.discordId);
+      const member = members?.get(p.discordId);
       out.push({
         discordId: p.discordId,
         username: member?.user?.username || p.discordId,
