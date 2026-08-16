@@ -120,7 +120,7 @@ client.once("clientReady", async () => {
       if (roleByName[def.name]) {
         console.log(`  rôle ${def.name} : déjà présent`);
       } else {
-        const r = await guild.roles.create({ name: def.name, color: def.color, mentionable: !!def.mentionable });
+        const r = await guild.roles.create({ name: def.name, colors: [def.color], mentionable: !!def.mentionable });
         roleByName[def.name] = r;
         console.log(`  rôle ${def.name} : créé`);
       }

@@ -17,10 +17,14 @@ const ROLE_RENAMES = {
 };
 
 const CHANNEL_RENAMES = {
-  annonces: "game-announcements",
+  annonces: "announcements",
+  "annonces-jeux": "game-announcements",
+  règles: "rules",
+  testeurs: "testers",
 };
 
 const CATEGORY_RENAMES = {
+  "📢 INFORMATIONS": "📢 INFORMATION",
   "🌍 COMMUNAUTÉ EN": "🌍 COMMUNITY EN",
   "🛠️ PROJET": "🛠️ PROJECT",
   "🔒 ÉQUIPE": "🔒 TEAM",
@@ -37,6 +41,15 @@ client.once("clientReady", async () => {
       process.exit(1);
     }
 
+    console.log("État actuel des salons/catégories :");
+    for (const ch of guild.channels.cache.values()) {
+      console.log(`  ${ch.type === 4 ? "[CAT]" : "[CH] "} ${ch.name}`);
+    }
+    console.log("État actuel des rôles :");
+    for (const r of guild.roles.cache.values()) {
+      if (r.name !== "@everyone") console.log(`  ${r.name}`);
+    }
+
     for (const [oldName, newName] of Object.entries(ROLE_RENAMES)) {
       const role = guild.roles.cache.find((r) => r.name === oldName);
       if (role) {
@@ -47,7 +60,7 @@ client.once("clientReady", async () => {
     }
 
     if (!guild.roles.cache.some((r) => r.name === "Game Updates")) {
-      const r = await guild.roles.create({ name: "Game Updates", color: "#00B0F4", mentionable: true });
+      const r = await guild.roles.create({ name: "Game Updates", colors: ["#00B0F4"], mentionable: true });
       console.log(`  rôle Game Updates créé (${r.id})`);
     }
 
