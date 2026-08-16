@@ -148,6 +148,13 @@ async function updateGameInfo(client, force = false) {
   const template = tplRow?.value || DEFAULT_TEMPLATE;
   const embed = buildEmbed(template, latest, "#0099ff");
   const payload = { embeds: [embed] };
+  const hash = JSON.stringify(payload);
+
+  // Ne ré-édite pas si rien n'a changé (évite le "modifié" permanent sur Discord)
+  try {
+    const hashRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoHash" } });
+    if (!force && hashRow?.value === hash) return;
+  } catch {}
 
   try {
     const msgRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoMessageId" } });
@@ -164,6 +171,11 @@ async function updateGameInfo(client, force = false) {
         create: { key: "gameInfoMessageId", value: sent.id },
       });
     }
+    await prisma.botSetting.upsert({
+      where: { key: "gameInfoHash" },
+      update: { value: hash },
+      create: { key: "gameInfoHash", value: hash },
+    });
   } catch (err) {
     await botLog("error", `#game-info : ${err.message}`);
   }
