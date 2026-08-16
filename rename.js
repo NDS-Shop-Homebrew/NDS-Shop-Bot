@@ -1,7 +1,7 @@
 // Renommage one-shot vers l'anglais (rôles + salons + catégories existants).
 // Usage : node rename.js
 // Prérequis : token dans .env, bot invité avec Manage Channels + Manage Roles.
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, PermissionFlagsBits } = require("discord.js");
 require("dotenv").config();
 const prisma = require("./lib/db");
 
@@ -83,6 +83,27 @@ client.once("clientReady", async () => {
     }
 
     console.log("✅ Renommage terminé !");
+
+    // Salons requis par le bot, créés si manquants
+    const required = [
+      { name: "game-announcements", parent: "📢 INFORMATION", readOnly: true, topic: "New games added to the catalogue — automatic." },
+      { name: "roles", parent: "📢 INFORMATION", readOnly: true, topic: "React with your language 🇫🇷/🇬🇧 to unlock the channels." },
+    ];
+    for (const req of required) {
+      if (guild.channels.cache.some((c) => c.name === req.name)) continue;
+      const parent = guild.channels.cache.find((c) => c.name === req.parent && c.type === 4);
+      const overrides = req.readOnly
+        ? [{ id: guild.roles.everyone.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.SendMessagesInThreads] }]
+        : [];
+      const created = await guild.channels.create({
+        name: req.name,
+        type: 0,
+        parent: parent?.id,
+        topic: req.topic,
+        permissionOverwrites: overrides,
+      });
+      console.log(`  #${req.name} créé (${created.id})`);
+    }
 
     // Migration BDD : permissionMatrix (rôles FR → EN)
     const row = await prisma.botSetting.findUnique({ where: { key: "permissionMatrix" } });
