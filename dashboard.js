@@ -579,7 +579,7 @@ function createDashboard(client) {
     try {
       const { threadId } = req.params;
       await client.channels.fetch(threadId).then((ch) => ch?.delete()).catch(() => {});
-      await prisma.gameRequest.delete({ where: { threadId } });
+      await prisma.gameRequest.deleteMany({ where: { threadId } });
       res.json({ ok: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
