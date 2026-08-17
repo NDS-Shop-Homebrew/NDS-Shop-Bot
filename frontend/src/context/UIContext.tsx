@@ -40,6 +40,10 @@ const DICT: Record<string, { fr: string; en: string }> = {
   "overview.scanGames": { fr: "Scanner les nouveaux jeux", en: "Scan new games" },
   "overview.online": { fr: "En ligne", en: "Online" },
   "overview.offline": { fr: "Hors ligne", en: "Offline" },
+  "overview.title": { fr: "Vue d'ensemble", en: "Overview" },
+  "overview.greeting": { fr: "Bonjour", en: "Hello" },
+  "overview.role": { fr: "rôle", en: "role" },
+  "overview.refresh": { fr: "Rafraîchir", en: "Refresh" },
 };
 
 interface UIContextValue {

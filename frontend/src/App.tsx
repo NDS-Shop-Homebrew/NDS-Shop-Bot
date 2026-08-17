@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Ticket, Megaphone, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, MessageSquare, Menu, X, PanelLeftClose, PanelLeftOpen, Terminal, Trophy } from "lucide-react";
+import { LayoutDashboard, Ticket, Megaphone, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, MessageSquare, Menu, X, PanelLeftClose, PanelLeftOpen, Terminal, Trophy } from "lucide-react";
 import { UIProvider, useUI } from "./context/UIContext";
 import { api, logout } from "./lib/api";
 import { cn } from "./lib/utils";
+import { Badge } from "./components/ui/badge";
+import { DarkModeToggle } from "./components/DarkModeToggle";
+import { LangToggle } from "./components/LangToggle";
 import Login from "./pages/Login";
 import Overview from "./pages/Overview";
 import Tickets from "./pages/Tickets";
@@ -68,10 +71,9 @@ function NavSection({ title, items, tab, setTab, collapsed }: any) {
 }
 
 function Shell({ onLogout }: { onLogout: () => void }) {
-  const { t, lang, setLang, dark, toggleDark } = useUI();
+  const { t } = useUI();
   const [tab, setTab] = useState<Tab>("overview");
-  const [user, setUser] = useState<string>("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<{ username?: string; email?: string; role?: string } | null>(null);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("botNavCollapsed") === "1");
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -83,11 +85,12 @@ function Shell({ onLogout }: { onLogout: () => void }) {
     (async () => {
       try {
         const s = await api<{ user: { username?: string; email?: string; role?: string } | null }>("/api/session");
-        setUser(s.user?.username || s.user?.email || "");
-        setIsAdmin(s.user?.role === "admin");
+        setUser(s.user);
       } catch {}
     })();
   }, []);
+
+  const isAdmin = user?.role === "admin";
 
   const isAdminTab = ADMIN_TABS.some((a) => a.id === tab);
   const isSystTab = SYST_TABS.some((s) => s.id === tab);
@@ -108,29 +111,36 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   );
 
   const SidebarFooter = () => (
-    <div className={cn("p-3 border-t border-border space-y-2", collapsed && "flex justify-center")}>
+    <div className="p-3 border-t border-border space-y-2">
       {!collapsed && (
         <div className="flex items-center gap-2 px-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user || "…"}</p>
+          <div className="flex-1 flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold">
+              {user?.username?.slice(0, 2).toUpperCase() || "?"}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate">{user?.username || user?.email || "…"}</p>
+              <Badge variant={isAdmin ? "default" : "secondary"} className="mt-0.5">
+                {user?.role}
+              </Badge>
+            </div>
           </div>
+          <DarkModeToggle />
+          <button onClick={onLogout} className="p-2 rounded-lg text-muted-foreground hover:text-destructive transition-colors" title={t("nav.logout")}>
+            <LogOut size={18} />
+          </button>
         </div>
       )}
-      <div className="flex items-center gap-1">
-        <button onClick={toggleDark} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Theme">
-          {dark ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-        <button
-          onClick={() => setLang(lang === "en" ? "fr" : "en")}
-          className="px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-muted transition-colors"
-          title="Langue"
-        >
-          {lang === "en" ? "FR" : "EN"}
-        </button>
-        <button onClick={onLogout} className="p-2 rounded-lg text-muted-foreground hover:text-destructive transition-colors" title={t("nav.logout")}>
-          <LogOut size={16} />
-        </button>
-      </div>
+      {collapsed && (
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold">
+            {user?.username?.slice(0, 2).toUpperCase() || "?"}
+          </div>
+          <button onClick={onLogout} className="p-2 rounded-lg text-muted-foreground hover:text-destructive transition-colors" title={t("nav.logout")}>
+            <LogOut size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -166,10 +176,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             <span className="font-bold">{t("app.title")}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={toggleDark} className="p-2 rounded-lg hover:bg-muted">{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
-            <button onClick={() => setLang(lang === "en" ? "fr" : "en")} className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted">
-              {lang === "en" ? "FR" : "EN"}
-            </button>
+            <LangToggle />
+            <DarkModeToggle />
             <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-muted">
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -205,8 +213,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
 
         {/* Content */}
         <main className="flex-1">
-          <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            {tab === "overview" && <Overview />}
+          <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="p-6 md:p-8 w-full max-w-7xl mx-auto">
+            {tab === "overview" && <Overview user={user} />}
             {tab === "tickets" && <Tickets />}
             {tab === "requests" && <Requests />}
             {tab === "announcements" && <Announcements />}

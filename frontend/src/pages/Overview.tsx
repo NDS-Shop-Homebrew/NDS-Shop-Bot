@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 import { useUI } from "../context/UIContext";
+import { DarkModeToggle } from "../components/DarkModeToggle";
+import { LangToggle } from "../components/LangToggle";
 import { api, type StatusData } from "../lib/api";
-import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock, MessageSquare } from "lucide-react";
+import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock, MessageSquare, Loader2 } from "lucide-react";
 
-export default function Overview() {
+export default function Overview({ user }: { user: { username?: string; role?: string } | null }) {
   const { t } = useUI();
   const [status, setStatus] = useState<StatusData | null>(null);
   const [openTickets, setOpenTickets] = useState<number>(0);
@@ -47,6 +50,23 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t("overview.title")}</h1>
+          <p className="text-muted-foreground text-sm">
+            {t("overview.greeting")} <strong>{user?.username}</strong> · {t("overview.role")}{" "}
+            <Badge variant={user?.role === "admin" ? "default" : "secondary"}>{user?.role}</Badge>
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <LangToggle />
+          <DarkModeToggle />
+          <Button onClick={load} variant="outline" size="sm" disabled={loading}>
+            {loading ? <Loader2 size={14} className="animate-spin" /> : t("overview.refresh")}
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {cards.map((c) => (
           <Card key={c.label}>

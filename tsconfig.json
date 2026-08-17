@@ -13,5 +13,5 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["config.ts", "server.ts", "index.ts", "dashboard.ts", "lib", "commands", "setup.ts"]
+  "include": ["config.ts", "server.ts", "index.ts", "dashboard.ts", "lib", "commands", "setup.ts", "cleanup-duplicates.ts", "rename.ts"]
 }
