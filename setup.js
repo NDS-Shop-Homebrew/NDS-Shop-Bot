@@ -40,7 +40,6 @@ const config = {
         { name: "rules", readOnly: true, topic: "Server rules — read before joining in." },
         { name: "announcements", readOnly: true, staffPing: true, keep: true, topic: "Official NDS-Shop project announcements." },
         { name: "game-info", readOnly: true, topic: "Latest games added to the catalogue — updated automatically." },
-        { name: "changelog", readOnly: true, topic: "Site and catalogue update history." },
         { name: "game-requests", forum: true, topic: "Request games to be added to the catalogue — one post per game. / Demande un jeu pour le catalogue — un post par jeu." },
       ],
     },
@@ -154,7 +153,12 @@ client.once("clientReady", async () => {
       console.log(`🧹 Supprimé ${toDelete.length} catégorie(s)/salon(s)`);
     }
 
-    // ---- Catégories + salons ----
+    // ---- Catégories + salons (idempotent : ne crée que l'existant manquant) ----
+    const existingByName = new Map();
+    for (const ch of guild.channels.cache.values()) {
+      existingByName.set(ch.name.toLowerCase(), ch);
+    }
+
     for (const cat of config.categories) {
       // Overrides de visibilité au niveau de la CATÉGORIE (hérités par les salons)
       const catOverrides = [];
@@ -177,13 +181,28 @@ client.once("clientReady", async () => {
         catOverrides.push({ id: botRole.id, allow: [PermissionFlagsBits.ViewChannel] });
       }
 
-      const category = await guild.channels.create({
-        name: cat.name,
-        type: ChannelType.GuildCategory,
-        permissionOverwrites: catOverrides,
-      });
+      const existingCat = [...guild.channels.cache.values()].find(
+        (c) => c.type === ChannelType.GuildCategory && c.name.toLowerCase() === cat.name.toLowerCase()
+      );
+      let category = existingCat;
+      if (existingCat) {
+        console.log(`  [catégorie] ${cat.name} : déjà présente (réutilisée)`);
+      } else {
+        category = await guild.channels.create({
+          name: cat.name,
+          type: ChannelType.GuildCategory,
+          permissionOverwrites: catOverrides,
+        });
+        console.log(`  [catégorie] ${cat.name} : créée`);
+      }
 
       for (const def of cat.channels) {
+        const existing = existingByName.get(def.name.toLowerCase());
+        if (existing) {
+          console.log(`  #${def.name} : déjà présent (réutilisé)`);
+          continue;
+        }
+
         const type = def.forum
           ? ChannelType.GuildForum
           : def.voice
@@ -208,22 +227,6 @@ client.once("clientReady", async () => {
           }
         }
 
-        // Salon existant à réutiliser uniquement si marqué keep (ex: #annonces)
-        if (def.keep) {
-          const existing = guild.channels.cache.find(
-            (ch) =>
-              ch.name.toLowerCase() === def.name.toLowerCase() &&
-              ch.type !== ChannelType.GuildCategory
-          );
-          if (existing) {
-            await existing.setParent(category.id);
-            await existing.permissionOverwrites.set(overrides);
-            if (def.topic && existing.isTextBased()) await existing.setTopic(def.topic).catch(() => {});
-            console.log(`  #${def.name} : réutilisé (déplacé dans la catégorie)`);
-            continue;
-          }
-        }
-
         const channel = await guild.channels.create({
           name: def.name,
           type,
@@ -237,6 +240,7 @@ client.once("clientReady", async () => {
               }
             : {}),
         });
+        existingByName.set(def.name.toLowerCase(), channel);
         console.log(
           `  #${def.name} (${type === ChannelType.GuildForum ? "forum" : type === ChannelType.GuildVoice ? "vocal" : "texte"}) créé`,
         );
