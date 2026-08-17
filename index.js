@@ -18,7 +18,7 @@ const { botLog } = require("./lib/botLog");
 const { canUse, loadMatrix } = require("./lib/permissions");
 const { sendTicketMenu, createTicket, relayMessage, closeTicket } = require("./lib/tickets");
 const { buildEmbed, DEFAULT_TEMPLATE } = require("./lib/gameInfo");
-const { handleThreadCreate, handleThreadUpdate, notifyAddedGames } = require("./lib/gameRequests");
+const { handleThreadCreate, handleThreadUpdate, handleThreadDelete, notifyAddedGames } = require("./lib/gameRequests");
 const prisma = require("./lib/db");
 
 // ---- Chargement des commandes slash ----
@@ -310,6 +310,7 @@ async function startBot() {
   // Suivi des demandes de jeu (forum #game-requests)
   client.on("threadCreate", (thread) => handleThreadCreate(client, thread));
   client.on("threadUpdate", (oldThread, newThread) => handleThreadUpdate(client, oldThread, newThread));
+  client.on("threadDelete", (thread) => handleThreadDelete(client, thread));
 
   // Relais DM <-> thread de ticket
   client.on("messageCreate", async (message) => {
