@@ -10,6 +10,7 @@ const { botLog } = require("./lib/botLog");
 const { listGames } = require("./lib/api");
 const { GUILD_ID, CHANNELS } = require("./config");
 const { resolveMentions } = require("./lib/mentions");
+const { setRequestStatus } = require("./lib/gameRequests");
 
 function createDashboard(client) {
   const app = express();
@@ -526,6 +527,52 @@ function createDashboard(client) {
       create: { key: "warnConfig", value: JSON.stringify(v) },
     });
     res.json({ ok: true, config: v });
+  });
+
+  // ---- Demandes de jeu (forum #game-requests) ----
+  app.get("/api/requests", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const where = status ? { status: String(status) } : {};
+      const rows = await prisma.gameRequest.findMany({ where, orderBy: { createdAt: "desc" } });
+
+      const forum = client?.guilds?.cache.get(GUILD_ID)?.channels.cache.find((c) => c.name === CHANNELS.gameRequests);
+      const forumId = forum?.id || null;
+
+      const users = new Map();
+      for (const r of rows) {
+        if (!users.has(r.discordId)) {
+          const u = await client.users.fetch(r.discordId).catch(() => null);
+          users.set(r.discordId, u ? `${u.displayName} (@${u.username})` : r.discordId);
+        }
+      }
+
+      res.json({
+        guildId: GUILD_ID,
+        forumId,
+        requests: rows.map((r) => ({
+          threadId: r.threadId,
+          title: r.title,
+          status: r.status,
+          discordId: r.discordId,
+          username: users.get(r.discordId),
+          createdAt: r.createdAt,
+        })),
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/requests/:threadId/status", requireAdmin, async (req, res) => {
+    try {
+      const { threadId } = req.params;
+      const { status } = req.body || {};
+      await setRequestStatus(client, threadId, status);
+      res.json({ ok: true, status });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
   });
 
   // ---- Export / import réglages (backup) ----

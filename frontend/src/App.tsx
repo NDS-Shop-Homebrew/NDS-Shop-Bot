@@ -7,6 +7,7 @@ import { cn } from "./lib/utils";
 import Login from "./pages/Login";
 import Overview from "./pages/Overview";
 import Tickets from "./pages/Tickets";
+import Requests from "./pages/Requests";
 import Announcements from "./pages/Announcements";
 import Users from "./pages/Users";
 import Permissions from "./pages/Permissions";
@@ -17,7 +18,7 @@ import Settings from "./pages/Settings";
 import Commands from "./pages/Commands";
 import Leaderboard from "./pages/Leaderboard";
 
-type Tab = "overview" | "tickets" | "announcements" | "users" | "permissions" | "messages" | "send" | "logs" | "settings" | "commands" | "leaderboard";
+type Tab = "overview" | "tickets" | "requests" | "announcements" | "users" | "permissions" | "messages" | "send" | "logs" | "settings" | "commands" | "leaderboard";
 
 const MAIN_TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "overview", icon: LayoutDashboard, key: "nav.overview" },
@@ -27,6 +28,7 @@ const MAIN_TABS: { id: Tab; icon: any; key: string }[] = [
 
 const ADMIN_TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "users", icon: UsersIcon, key: "nav.users" },
+  { id: "requests", icon: Ticket, key: "nav.requests" },
   { id: "leaderboard", icon: Trophy, key: "nav.leaderboard" },
   { id: "commands", icon: Terminal, key: "nav.commands" },
   { id: "announcements", icon: Megaphone, key: "nav.announcements" },
@@ -183,6 +185,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
           {tab === "overview" && <Overview />}
           {tab === "tickets" && <Tickets />}
+          {tab === "requests" && <Requests />}
           {tab === "announcements" && <Announcements />}
           {tab === "users" && <Users />}
           {tab === "permissions" && <Permissions />}
