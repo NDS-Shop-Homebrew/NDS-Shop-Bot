@@ -12,6 +12,12 @@ const KEEP_CHANNEL_NAMES = ["announcements"];
 
 const config = {
   deleteExisting: process.argv.includes("--force"),
+  forumTags: [
+    { name: "📥 Demandé" },
+    { name: "✅ Ajouté" },
+    { name: "❌ Refusé" },
+    { name: "🔁 Doublon" },
+  ],
   roles: [
     { name: "Admin", color: "#E74C3C" },
     { name: "Moderator", color: "#2ECC71" },
@@ -37,6 +43,7 @@ const config = {
         { name: "game-info", readOnly: true, topic: "Latest games added to the catalogue — updated automatically." },
         { name: "changelog", readOnly: true, topic: "Site and catalogue update history." },
         { name: "roles", readOnly: true, topic: "React with your language 🇫🇷/🇬🇧 to unlock the channels." },
+        { name: "game-requests", forum: true, topic: "Request games to be added to the catalogue — one post per game. / Demande un jeu pour le catalogue — un post par jeu." },
       ],
     },
     {
@@ -179,7 +186,11 @@ client.once("clientReady", async () => {
       });
 
       for (const def of cat.channels) {
-        const type = def.voice ? ChannelType.GuildVoice : ChannelType.GuildText;
+        const type = def.forum
+          ? ChannelType.GuildForum
+          : def.voice
+            ? ChannelType.GuildVoice
+            : ChannelType.GuildText;
         const overrides = [];
 
         // readOnly / staffPing (par salon)
@@ -221,8 +232,16 @@ client.once("clientReady", async () => {
           parent: category.id,
           permissionOverwrites: overrides,
           topic: def.topic || undefined,
+          ...(def.forum
+            ? {
+                availableTags: config.forumTags,
+                defaultSortOrder: 1, // 1 = dernière activité, 0 = création
+              }
+            : {}),
         });
-        console.log(`  #${def.name} (${type === ChannelType.GuildText ? "texte" : "vocal"}) créé`);
+        console.log(
+          `  #${def.name} (${type === ChannelType.GuildForum ? "forum" : type === ChannelType.GuildVoice ? "vocal" : "texte"}) créé`,
+        );
       }
     }
 
