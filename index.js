@@ -12,9 +12,8 @@ const {
 } = require("discord.js");
 require("dotenv").config();
 
-const { GUILD_ID, ROLE_MENU, ROLE_CHANNEL, ROLE_MEMBRE, ROLE_MENU_MESSAGE_ID, ROLE_GAME_UPDATES, CHANNELS, POLL_INTERVAL_MS } = require("./config");
+const { GUILD_ID, ROLE_GAME_UPDATES, CHANNELS, POLL_INTERVAL_MS } = require("./config");
 const { listGames } = require("./lib/api");
-const { T } = require("./lib/lang");
 const { botLog } = require("./lib/botLog");
 const { canUse, loadMatrix } = require("./lib/permissions");
 const { sendTicketMenu, createTicket, relayMessage, closeTicket } = require("./lib/tickets");
@@ -42,97 +41,6 @@ async function registerSlashCommands(client) {
   const body = [...commands.values()].map((c) => c.data.toJSON());
   await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), { body });
   await botLog("info", `${body.length} slash commands enregistrées`);
-}
-
-async function postRoleMenu(client) {
-  const guild = client.guilds.cache.get(GUILD_ID);
-  if (!guild) return;
-  const channel = guild.channels.cache.find((c) => c.name === ROLE_CHANNEL && c.isTextBased());
-  if (!channel) return;
-
-  const menuEmbed = new EmbedBuilder()
-    .setColor("#5865F2")
-    .setTitle("Choix de langue / Language selection")
-    .setDescription(
-      "Réagissez avec votre langue pour accéder aux salons. Vous aurez automatiquement le rôle **Member**.\n\n" +
-        "React with your language to unlock the channels. You will automatically get the **Member** role.\n\n" +
-        Object.entries(ROLE_MENU)
-          .map(([emoji, role]) => `${emoji} → ${role}`)
-          .join("\n") +
-        "\n\n_Retirez votre réaction pour changer de langue / Remove your reaction to switch._"
-    );
-
-  // Cherche en base l'ID sauvegardé
-  let savedId = ROLE_MENU_MESSAGE_ID;
-  if (!savedId) {
-    try {
-      const row = await prisma.botSetting.findUnique({ where: { key: "roleMenuMessageId" } });
-      if (row?.value) savedId = row.value;
-    } catch {}
-  }
-
-  // Réutilise le message existant
-  let message;
-  if (savedId) {
-    try {
-      message = await channel.messages.fetch(savedId);
-    } catch {}
-  }
-
-  // Cherche un message du bot avec le même titre dans le salon (fallback)
-  if (!message) {
-    const messages = await channel.messages.fetch({ limit: 50 });
-    const botMsg = messages.find((m) => m.author.id === client.user.id && m.embeds?.[0]?.title === "Choix de langue / Language selection");
-    if (botMsg) {
-      message = botMsg;
-      savedId = message.id;
-    }
-  }
-
-  // Supprime les doublons (tous les autres messages du bot avec ce titre dans le salon)
-  const allMsgs = await channel.messages.fetch({ limit: 50 });
-  const dupes = allMsgs.filter((m) => m.id !== message?.id && m.author.id === client.user.id && m.embeds?.[0]?.title === "Choix de langue / Language selection");
-  for (const d of dupes.values()) {
-    try { await d.delete(); } catch {}
-  }
-
-  if (!message) {
-    message = await channel.send({ embeds: [menuEmbed] });
-    savedId = message.id;
-    await botLog("info", `Menu posté dans #${channel.name} (id: ${savedId})`);
-  }
-
-  // Sauvegarde l'ID en base
-  try {
-    if (savedId) {
-      await prisma.botSetting.upsert({
-        where: { key: "roleMenuMessageId" },
-        update: { value: savedId },
-        create: { key: "roleMenuMessageId", value: savedId },
-      });
-    }
-  } catch {}
-
-  for (const emoji of Object.keys(ROLE_MENU)) {
-    await message.react(emoji).catch(() => {});
-  }
-}
-
-// Annonce d'un nouveau jeu dans #annonces-jeux
-async function announceGame(client, g) {
-  const guild = client.guilds.cache.get(GUILD_ID);
-  const channel = guild?.channels.cache.find((c) => c.name === CHANNELS.annoncesJeux && c.isTextBased());
-  const embed = new EmbedBuilder()
-    .setColor("#0099ff")
-    .setTitle(`${T.fr.newGamesTitle} : ${g.title}`)
-    .setURL(`https://db-nds-shop.fr/game/${g.fileName}`)
-    .setThumbnail(g.icon || null)
-    .addFields(
-      { name: "Auteur", value: g.author || "N/A", inline: true },
-      { name: "Version", value: g.version || "N/A", inline: true },
-      { name: "Systèmes", value: (g.systems || []).join(", ") || "N/A", inline: true }
-    );
-  if (channel) await channel.send({ embeds: [embed] });
 }
 
 // Met à jour #game-info avec les N derniers jeux ajoutés (template éditable en base)
@@ -240,8 +148,7 @@ async function pollNewGames(client) {
     const removed = Object.keys(known).filter((k) => !gamesCache.some((g) => g.fileName === k));
 
     for (const g of added) {
-      await announceGame(client, g);
-      await botLog("info", `Nouveau jeu annoncé : ${g.title}`);
+      await botLog("info", `Nouveau jeu détecté : ${g.title}`);
     }
     if (removed.length) {
       await botLog("warn", `${removed.length} jeu(x) retiré(s) du catalogue`);
@@ -256,41 +163,6 @@ async function pollNewGames(client) {
     await updateGameInfo(client, false, added.length > 0);
   } catch (err) {
     await botLog("error", `Poll: ${err.message}`);
-  }
-}
-
-// --- Réaction du menu de rôles ---
-async function handleReaction(client, reaction, user, adding) {
-  if (user.bot) return;
-  const guild = client.guilds.cache.get(GUILD_ID);
-  if (!guild) return;
-  const channel = reaction.message.channel;
-  if (channel.name !== ROLE_CHANNEL) return;
-  if (ROLE_MENU_MESSAGE_ID && reaction.message.id !== ROLE_MENU_MESSAGE_ID) return;
-
-  const roleName = ROLE_MENU[reaction.emoji.name];
-  if (!roleName) {
-    await reaction.remove().catch(() => {});
-    return;
-  }
-  const member = await guild.members.fetch(user.id);
-  const role = guild.roles.cache.find((r) => r.name === roleName);
-  const membreRole = guild.roles.cache.find((r) => r.name === ROLE_MEMBRE);
-  if (!role || !membreRole) return;
-
-  try {
-    if (adding) {
-      await member.roles.add([membreRole, role]);
-      for (const [emoji, otherName] of Object.entries(ROLE_MENU)) {
-        if (otherName === roleName) continue;
-        const otherRole = guild.roles.cache.find((r) => r.name === otherName);
-        if (otherRole) await member.roles.remove(otherRole).catch(() => {});
-      }
-    } else {
-      await member.roles.remove([membreRole, role]);
-    }
-  } catch (err) {
-    await botLog("error", `Assignation rôle: ${err.message}`);
   }
 }
 
@@ -312,7 +184,6 @@ async function startBot() {
     await botLog("info", `Connecté en tant que ${client.user.tag}`);
     await loadMatrix();
     await registerSlashCommands(client);
-    await postRoleMenu(client);
     await ensureChannels(client);
 
     // Intervalle de poll configurable depuis le dashboard (BotSetting)
@@ -470,28 +341,6 @@ async function startBot() {
         }
       }
     } catch {}
-  });
-
-  client.on("messageReactionAdd", async (reaction, user) => {
-    if (reaction.partial) {
-      try {
-        await reaction.fetch();
-      } catch {
-        return;
-      }
-    }
-    await handleReaction(client, reaction, user, true);
-  });
-
-  client.on("messageReactionRemove", async (reaction, user) => {
-    if (reaction.partial) {
-      try {
-        await reaction.fetch();
-      } catch {
-        return;
-      }
-    }
-    await handleReaction(client, reaction, user, false);
   });
 
   await client.login(process.env.DISCORD_TOKEN);

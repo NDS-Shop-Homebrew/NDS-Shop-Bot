@@ -4,21 +4,11 @@ module.exports = {
   GUILD_ID: "1271186486070345843",
   API_BASE_URL: "https://db-nds-shop.fr",
 
-  // Choix de rôle (#roles)
-  ROLE_CHANNEL: "roles",
-  ROLE_MEMBRE: "Member",
-  ROLE_MENU: {
-    "🇫🇷": "French",
-    "🇬🇧": "English",
-  },
-  ROLE_MENU_MESSAGE_ID: process.env.ROLE_MENU_MESSAGE_ID || "",
-
   // Rôle pingué dans #game-info quand un nouveau jeu arrive
   ROLE_GAME_UPDATES: "Game Updates",
 
   // Salons cibles (LOGS)
   CHANNELS: {
-    annoncesJeux: "game-announcements",
     gameInfo: "game-info",
     suggestions: "suggestions",
     bugReports: "bug-reports",

@@ -39,10 +39,8 @@ const config = {
       channels: [
         { name: "rules", readOnly: true, topic: "Server rules — read before joining in." },
         { name: "announcements", readOnly: true, staffPing: true, keep: true, topic: "Official NDS-Shop project announcements." },
-        { name: "game-announcements", readOnly: true, topic: "New games added to the catalogue — automatic." },
         { name: "game-info", readOnly: true, topic: "Latest games added to the catalogue — updated automatically." },
         { name: "changelog", readOnly: true, topic: "Site and catalogue update history." },
-        { name: "roles", readOnly: true, topic: "React with your language 🇫🇷/🇬🇧 to unlock the channels." },
         { name: "game-requests", forum: true, topic: "Request games to be added to the catalogue — one post per game. / Demande un jeu pour le catalogue — un post par jeu." },
       ],
     },
