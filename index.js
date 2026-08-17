@@ -18,6 +18,7 @@ const { botLog } = require("./lib/botLog");
 const { canUse, loadMatrix } = require("./lib/permissions");
 const { sendTicketMenu, createTicket, relayMessage, closeTicket } = require("./lib/tickets");
 const { buildEmbed, DEFAULT_TEMPLATE } = require("./lib/gameInfo");
+const { handleThreadCreate, handleThreadUpdate, notifyAddedGames } = require("./lib/gameRequests");
 const prisma = require("./lib/db");
 
 // ---- Chargement des commandes slash ----
@@ -152,6 +153,11 @@ async function pollNewGames(client) {
     }
     if (removed.length) {
       await botLog("warn", `${removed.length} jeu(x) retiré(s) du catalogue`);
+    }
+
+    // MP aux demandeurs dont le jeu vient d'être ajouté + tag ✅ Ajouté
+    if (added.length) {
+      await notifyAddedGames(client, added);
     }
 
     await prisma.botSetting.upsert({
@@ -300,6 +306,10 @@ async function startBot() {
       }
     }
   });
+
+  // Suivi des demandes de jeu (forum #game-requests)
+  client.on("threadCreate", (thread) => handleThreadCreate(client, thread));
+  client.on("threadUpdate", (oldThread, newThread) => handleThreadUpdate(client, oldThread, newThread));
 
   // Relais DM <-> thread de ticket
   client.on("messageCreate", async (message) => {

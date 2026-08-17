@@ -228,3 +228,17 @@ model BotDmMessage {
 
   @@map("bot_dm_message")
 }
+
+// Mapping post de demande de jeu (forum #game-requests) → demandeur Discord.
+// Rempli au threadCreate par le bot (le backend inscrit le discordId dans l'embed du post).
+model GameRequest {
+  id        String   @id @default(cuid())
+  threadId  String   @unique @db.VarChar(32) // ID du post forum
+  discordId String   @db.VarChar(32)         // demandeur
+  title     String   @db.Text                // titre demandé
+  tagId     String?  @db.VarChar(32)         // tag appliqué (id Discord)
+  status    String   @default("Demandé")
+  createdAt DateTime @default(now())
+
+  @@map("bot_game_request")
+}
