@@ -19,18 +19,19 @@ export default function Overview({ user }: { user: { username?: string; role?: s
 
   const load = async () => {
     setLoading(true);
-    try {
-      const s = await api<StatusData>("/api/status");
-      setStatus(s);
-      try { setOpenTickets((await api<any[]>("/api/tickets?status=open")).length); } catch {}
-      try { setCommands((await api<any[]>("/api/commands?limit=100")).length); } catch {}
-      try { setBlacklist((await api<any[]>("/api/blacklist")).length); } catch {}
-      try { setDms((await api<any[]>("/api/dm/contacts")).filter((c) => c.unreadCount > 0).length); } catch {}
-    } catch {
-      setStatus(null);
-    } finally {
-      setLoading(false);
-    }
+    const [statusRes, tickets, commands, blacklist, contacts] = await Promise.allSettled([
+      api<StatusData>("/api/status"),
+      api<any[]>("/api/tickets?status=open"),
+      api<any[]>("/api/commands?limit=100"),
+      api<any[]>("/api/blacklist"),
+      api<any[]>("/api/dm/contacts"),
+    ]);
+    if (statusRes.status === "fulfilled") setStatus(statusRes.value);
+    if (tickets.status === "fulfilled") setOpenTickets(tickets.value.length);
+    if (commands.status === "fulfilled") setCommands(commands.value.length);
+    if (blacklist.status === "fulfilled") setBlacklist(blacklist.value.length);
+    if (contacts.status === "fulfilled") setDms(contacts.value.filter((c) => c.unreadCount > 0).length);
+    setLoading(false);
   };
   useEffect(() => { load(); }, []);
 

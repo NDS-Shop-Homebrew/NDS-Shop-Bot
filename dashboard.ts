@@ -8,7 +8,8 @@ import prisma from "./lib/db.ts";
 import { botLog } from "./lib/botLog.ts";
 import { listGames } from "./lib/api.ts";
 import { GUILD_ID, CHANNELS } from "./config.ts";
-import { resolveMentions } from "./lib/mentions.ts";
+import { resolveMentions, getGuildMembers } from "./lib/mentions.ts";
+import { getGamesCache } from "./index.ts";
 import { setRequestStatus } from "./lib/gameRequests.ts";
 import { closeTicket } from "./lib/tickets.ts";
 import { listContacts, thread as getThread, markRead, recordOutgoing } from "./lib/dm.ts";
@@ -68,10 +69,7 @@ function createDashboard(client: Client | null) {
 
   app.get("/api/status", requireAuth, async (req, res) => {
     const guild = guildInfo();
-    let games = 0;
-    try {
-      games = (await listGames()).length;
-    } catch {}
+    const games = getGamesCache().length;
     res.json({
       bot: { online: client?.isReady() || false, username: client?.user?.tag || null, uptime: client?.uptime || 0 },
       guild,
@@ -285,18 +283,18 @@ where: { id: param(req, "id") },
   });
 
   app.get("/api/users", requireAuth, async (req, res) => {
-    const search = String(req.query.search || "");
+    const search = String(req.query.search || "").toLowerCase();
     const limit = Math.min(Number(req.query.limit || 100), 200);
     const profiles = await prisma.userProfile.findMany({ orderBy: { xp: "desc" }, take: limit });
-    const guild = client?.guilds?.cache.get(GUILD_ID);
+    const members = await getGuildMembers(client);
     const out: { discordId: string; username: string; xp: number; level: number; totalMsgs: number; favorites: string[] }[] = [];
-    const members = await guild?.members?.fetch().catch(() => null);
     for (const p of profiles) {
-      if (search && !p.discordId.includes(search)) continue;
       const member = members?.get(p.discordId);
+      const username = member?.user?.username || p.discordId;
+      if (search && !p.discordId.includes(search) && !username.toLowerCase().includes(search)) continue;
       out.push({
         discordId: p.discordId,
-        username: member?.user?.username || p.discordId,
+        username,
         xp: Number(p.xp),
         level: p.level,
         totalMsgs: p.totalMsgs,
@@ -446,10 +444,8 @@ where: { id: param(req, "id") },
   });
 
   app.get("/api/members", requireAuth, async (req, res) => {
-    const guild = client?.guilds?.cache.get(GUILD_ID);
-    if (!guild) return res.json([]);
     const q = String(req.query.search || "").toLowerCase();
-    const members = await guild.members.fetch().catch(() => new Map());
+    const members = await getGuildMembers(client);
     const out: { id: string; username: string; display: string; avatar: string }[] = [];
     for (const [, m] of members) {
       if (m.user.bot) continue;
