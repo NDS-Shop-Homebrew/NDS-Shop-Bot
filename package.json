@@ -2,11 +2,12 @@
   "name": "nds-shop-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
-    "start": "node server.js",
-    "setup": "node setup.js",
-    "prisma:generate": "prisma generate"
+    "start": "ts-node server.ts",
+    "setup": "ts-node setup.ts",
+    "prisma:generate": "prisma generate",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -15,22 +16,25 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/NDS-Shop-team/NDS-Shop-Bot/issues"
   },
   "homepage": "https://github.com/NDS-Shop-team/NDS-Shop-Bot#readme",
   "dependencies": {
     "@prisma/client": "^6.19.3",
-    "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "better-auth": "^1.6.29",
     "discord.js": "^14.24.2",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "marked": "^18.0.9"
+    "express": "^5.2.1"
   },
   "devDependencies": {
-    "prisma": "^6.19.3"
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.5.2",
+    "prisma": "^6.19.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
   }
 }
