@@ -4,6 +4,9 @@ type Lang = "fr" | "en";
 
 const DICT: Record<string, { fr: string; en: string }> = {
   "nav.overview": { fr: "Vue d'ensemble", en: "Overview" },
+  "nav.section.main": { fr: "Principal", en: "Main" },
+  "nav.section.admin": { fr: "Administration", en: "Administration" },
+  "nav.section.system": { fr: "Système", en: "System" },
   "nav.tickets": { fr: "Tickets", en: "Tickets" },
   "nav.requests": { fr: "Demandes", en: "Requests" },
   "nav.announcements": { fr: "Annonces", en: "Announcements" },

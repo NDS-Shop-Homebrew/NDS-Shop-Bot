@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Ticket, Megaphone, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, Languages, MessageSquare, ChevronDown, MoreHorizontal, Terminal, Trophy } from "lucide-react";
+import { LayoutDashboard, Ticket, Megaphone, Users as UsersIcon, ShieldCheck, Send as SendIcon, ScrollText, Settings as SettingsIcon, LogOut, Moon, Sun, MessageSquare, Menu, X, PanelLeftClose, PanelLeftOpen, Terminal, Trophy } from "lucide-react";
 import { UIProvider, useUI } from "./context/UIContext";
 import { api, logout } from "./lib/api";
 import { cn } from "./lib/utils";
@@ -41,25 +41,43 @@ const SYST_TABS: { id: Tab; icon: any; key: string }[] = [
   { id: "logs", icon: ScrollText, key: "nav.logs" },
 ];
 
+function NavSection({ title, items, tab, setTab, collapsed }: any) {
+  const { t } = useUI();
+  return (
+    <div className="space-y-1">
+      {title && !collapsed && (
+        <p className="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+      )}
+      {items.map((t2: any) => (
+        <button
+          key={t2.id}
+          onClick={() => setTab(t2.id)}
+          title={collapsed ? t(t2.key) : undefined}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full",
+            tab === t2.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            collapsed && "justify-center px-0"
+          )}
+        >
+          <t2.icon size={18} className="shrink-0" />
+          {!collapsed && t(t2.key)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Shell({ onLogout }: { onLogout: () => void }) {
   const { t, lang, setLang, dark, toggleDark } = useUI();
   const [tab, setTab] = useState<Tab>("overview");
   const [user, setUser] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
-  const [systOpen, setSystOpen] = useState(false);
-  const adminRef = useRef<HTMLDivElement>(null);
-  const systRef = useRef<HTMLDivElement>(null);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("botNavCollapsed") === "1");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Fermeture des dropdowns au clic extérieur
   useEffect(() => {
-    const fn = (e: MouseEvent) => {
-      if (adminRef.current && !adminRef.current.contains(e.target as Node)) setAdminOpen(false);
-      if (systRef.current && !systRef.current.contains(e.target as Node)) setSystOpen(false);
-    };
-    document.addEventListener("mousedown", fn);
-    return () => document.removeEventListener("mousedown", fn);
-  }, []);
+    localStorage.setItem("botNavCollapsed", collapsed ? "1" : "0");
+  }, [collapsed]);
 
   useEffect(() => {
     (async () => {
@@ -71,132 +89,138 @@ function Shell({ onLogout }: { onLogout: () => void }) {
     })();
   }, []);
 
-  // Repli vers un onglet autorisé si le rôle change ou si on est sur un onglet interdit
   const isAdminTab = ADMIN_TABS.some((a) => a.id === tab);
   const isSystTab = SYST_TABS.some((s) => s.id === tab);
   useEffect(() => {
     if (!isAdmin && (isAdminTab || isSystTab)) setTab("overview");
   }, [isAdmin, isAdminTab, isSystTab]);
 
-  return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="N" className="w-8 h-8 rounded-lg" />
-            <span className="font-bold">{t("app.title")}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={toggleDark} className="p-2 rounded-lg border border-border hover:bg-muted transition-colors">
-              {dark ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-            <button
-              onClick={() => setLang(lang === "en" ? "fr" : "en")}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors flex items-center gap-1"
-            >
-              <Languages size={13} /> {lang === "en" ? "FR" : "EN"}
-            </button>
-            <span className="text-sm text-muted-foreground hidden sm:inline">{user}</span>
-            <button onClick={onLogout} className="px-3 py-1.5 rounded-lg text-sm border border-border hover:bg-muted transition-colors flex items-center gap-1">
-              <LogOut size={14} /> {t("nav.logout")}
-            </button>
+  const Nav = () => (
+    <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+      <NavSection items={MAIN_TABS} tab={tab} setTab={setTab} collapsed={collapsed} />
+      {isAdmin && (
+        <NavSection title={t("nav.section.admin")} items={ADMIN_TABS} tab={tab} setTab={setTab} collapsed={collapsed} />
+      )}
+      {isAdmin && (
+        <NavSection title={t("nav.section.system")} items={SYST_TABS} tab={tab} setTab={setTab} collapsed={collapsed} />
+      )}
+    </nav>
+  );
+
+  const SidebarFooter = () => (
+    <div className={cn("p-3 border-t border-border space-y-2", collapsed && "flex justify-center")}>
+      {!collapsed && (
+        <div className="flex items-center gap-2 px-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{user || "…"}</p>
           </div>
         </div>
-        {/* Tabs */}
-        <nav className="max-w-7xl mx-auto px-4 flex flex-wrap items-center gap-1 pb-2">
-          {MAIN_TABS.map((t2) => (
-            <button
-              key={t2.id}
-              onClick={() => setTab(t2.id)}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap",
-                tab === t2.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-              )}
-            >
-              <t2.icon size={15} /> {t(t2.key)}
-            </button>
-          ))}
+      )}
+      <div className="flex items-center gap-1">
+        <button onClick={toggleDark} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Theme">
+          {dark ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+        <button
+          onClick={() => setLang(lang === "en" ? "fr" : "en")}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+          title="Langue"
+        >
+          {lang === "en" ? "FR" : "EN"}
+        </button>
+        <button onClick={onLogout} className="p-2 rounded-lg text-muted-foreground hover:text-destructive transition-colors" title={t("nav.logout")}>
+          <LogOut size={16} />
+        </button>
+      </div>
+    </div>
+  );
 
-          {/* Dropdown Admin + Système (réservés aux admins) */}
-          {isAdmin && (<>
-          <div ref={adminRef} className="relative">
-            <button
-              onClick={() => setAdminOpen(!adminOpen)}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap",
-                isAdminTab ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-              )}
-            >
-              <MoreHorizontal size={15} /> Gestion <ChevronDown size={12} />
-            </button>
-            {adminOpen && (
-              <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg p-1 min-w-[180px] z-40">
-                {ADMIN_TABS.map((t2) => (
-                  <button
-                    key={t2.id}
-                    onClick={() => { setTab(t2.id); setAdminOpen(false); }}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-                      tab === t2.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                    )}
-                  >
-                    <t2.icon size={15} /> {t(t2.key)}
-                  </button>
-                ))}
-              </div>
-            )}
+  return (
+    <div className="min-h-screen flex bg-muted/30">
+      {/* Sidebar desktop */}
+      <aside className={cn("hidden lg:flex flex-col bg-card border-r border-border shrink-0 sticky top-0 h-screen transition-all duration-200", collapsed ? "w-16" : "w-60")}>
+        <div className={cn("flex items-center gap-2 px-5 h-16 border-b border-border", collapsed && "justify-center px-0")}>
+          <img src="/logo.png" alt="N" className="w-8 h-8 rounded-lg shrink-0" />
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="font-bold leading-tight truncate">NDS-Shop</p>
+              <p className="text-xs text-muted-foreground">Bot</p>
+            </div>
+          )}
+        </div>
+        <Nav />
+        <SidebarFooter />
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute top-16 -right-3 z-10 p-1 rounded-full bg-card border border-border text-muted-foreground hover:text-foreground shadow"
+          title={collapsed ? "Déplier" : "Replier"}
+        >
+          {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+        </button>
+      </aside>
+
+      {/* Topbar mobile */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="lg:hidden sticky top-0 z-40 bg-card border-b border-border h-14 flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="N" className="w-7 h-7 rounded-lg" />
+            <span className="font-bold">{t("app.title")}</span>
           </div>
-
-          {/* Dropdown Système */}
-          <div ref={systRef} className="relative">
-            <button
-              onClick={() => setSystOpen(!systOpen)}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap",
-                isSystTab ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-              )}
-            >
-              <MoreHorizontal size={15} /> Système <ChevronDown size={12} />
+          <div className="flex items-center gap-2">
+            <button onClick={toggleDark} className="p-2 rounded-lg hover:bg-muted">{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
+            <button onClick={() => setLang(lang === "en" ? "fr" : "en")} className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted">
+              {lang === "en" ? "FR" : "EN"}
             </button>
-            {systOpen && (
-              <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-lg shadow-lg p-1 min-w-[180px] z-40">
-                {SYST_TABS.map((t2) => (
-                  <button
-                    key={t2.id}
-                    onClick={() => { setTab(t2.id); setSystOpen(false); }}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-                      tab === t2.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                    )}
-                  >
-                    <t2.icon size={15} /> {t(t2.key)}
-                  </button>
-                ))}
-              </div>
-            )}
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-muted">
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
-          </>)}
-        </nav>
-      </header>
+        </header>
 
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-          {tab === "overview" && <Overview />}
-          {tab === "tickets" && <Tickets />}
-          {tab === "requests" && <Requests />}
-          {tab === "announcements" && <Announcements />}
-          {tab === "users" && <Users />}
-          {tab === "permissions" && <Permissions />}
-          {tab === "messages" && <Messages />}
-          {tab === "send" && <Send />}
-          {tab === "logs" && <Logs />}
-          {tab === "settings" && <Settings />}
-          {tab === "commands" && <Commands />}
-          {tab === "leaderboard" && <Leaderboard />}
-        </motion.div>
-      </main>
+        {/* Sidebar mobile overlay */}
+        {mobileOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/40" onClick={() => setMobileOpen(false)}>
+            <div className="w-64 h-full bg-card border-r border-border p-4 flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2 pb-4 border-b border-border">
+                <img src="/logo.png" alt="N" className="w-8 h-8 rounded-lg" />
+                <span className="font-bold">{t("app.title")}</span>
+              </div>
+              <NavSection items={MAIN_TABS} tab={tab} setTab={(t2: Tab) => { setTab(t2); setMobileOpen(false); }} />
+              {isAdmin && (
+                <NavSection title={t("nav.section.admin")} items={ADMIN_TABS} tab={tab} setTab={(t2: Tab) => { setTab(t2); setMobileOpen(false); }} />
+              )}
+              {isAdmin && (
+                <NavSection title={t("nav.section.system")} items={SYST_TABS} tab={tab} setTab={(t2: Tab) => { setTab(t2); setMobileOpen(false); }} />
+              )}
+              <div className="mt-auto">
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive transition-colors w-full"
+                >
+                  <LogOut size={18} /> {t("nav.logout")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        <main className="flex-1">
+          <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+            {tab === "overview" && <Overview />}
+            {tab === "tickets" && <Tickets />}
+            {tab === "requests" && <Requests />}
+            {tab === "announcements" && <Announcements />}
+            {tab === "users" && <Users />}
+            {tab === "permissions" && <Permissions />}
+            {tab === "messages" && <Messages />}
+            {tab === "send" && <Send />}
+            {tab === "logs" && <Logs />}
+            {tab === "settings" && <Settings />}
+            {tab === "commands" && <Commands />}
+            {tab === "leaderboard" && <Leaderboard />}
+          </motion.div>
+        </main>
+      </div>
     </div>
   );
 }
