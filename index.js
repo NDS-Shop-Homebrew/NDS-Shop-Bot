@@ -155,7 +155,6 @@ async function pollNewGames(client) {
       await botLog("warn", `${removed.length} jeu(x) retiré(s) du catalogue`);
     }
 
-    // MP aux demandeurs dont le jeu vient d'être ajouté + tag ✅ Ajouté
     if (added.length) {
       await notifyAddedGames(client, added);
     }
@@ -307,7 +306,6 @@ async function startBot() {
     }
   });
 
-  // Suivi des demandes de jeu (forum #game-requests)
   client.on("threadCreate", (thread) => handleThreadCreate(client, thread));
   client.on("threadUpdate", (oldThread, newThread) => handleThreadUpdate(client, oldThread, newThread));
   client.on("threadDelete", (thread) => handleThreadDelete(client, thread));

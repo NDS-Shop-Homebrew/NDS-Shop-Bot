@@ -20,6 +20,8 @@ export default function Requests() {
   const [data, setData] = useState<RequestsResponse | null>(null);
   const [filter, setFilter] = useState<string>("Tous");
   const [err, setErr] = useState("");
+  const [toDelete, setToDelete] = useState<RequestRow | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     setErr("");
@@ -39,6 +41,21 @@ export default function Requests() {
       load();
     } catch (e: any) {
       setErr(e.message || "Erreur");
+    }
+  };
+
+  const doDelete = async () => {
+    if (!toDelete) return;
+    setBusy(true);
+    setErr("");
+    try {
+      await api(`/api/requests/${toDelete.threadId}`, { method: "DELETE" });
+      setToDelete(null);
+      load();
+    } catch (e: any) {
+      setErr(e.message || "Erreur");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -86,12 +103,32 @@ export default function Requests() {
                       Post
                     </a>
                   )}
+                  <Button size="sm" variant="destructive" onClick={() => setToDelete(r)}>Supprimer</Button>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {toDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-5 space-y-4">
+              <p className="font-semibold">Supprimer la demande « {toDelete.title} » ?</p>
+              <p className="text-sm text-muted-foreground">
+                Le post sera retiré du forum Discord et la demande supprimée de la liste. Action irréversible.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" onClick={() => setToDelete(null)} disabled={busy}>Annuler</Button>
+                <Button variant="destructive" onClick={doDelete} disabled={busy}>
+                  {busy ? "Suppression…" : "Supprimer"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

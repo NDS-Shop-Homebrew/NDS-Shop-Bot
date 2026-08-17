@@ -529,7 +529,7 @@ function createDashboard(client) {
     res.json({ ok: true, config: v });
   });
 
-  // ---- Demandes de jeu (forum #game-requests) ----
+  // ---- Demandes de jeu ----
   app.get("/api/requests", requireAdmin, async (req, res) => {
     try {
       const { status } = req.query;
@@ -570,6 +570,17 @@ function createDashboard(client) {
       const { status } = req.body || {};
       await setRequestStatus(client, threadId, status);
       res.json({ ok: true, status });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/requests/:threadId", requireAdmin, async (req, res) => {
+    try {
+      const { threadId } = req.params;
+      await client.channels.fetch(threadId).then((ch) => ch?.delete()).catch(() => {});
+      await prisma.gameRequest.delete({ where: { threadId } });
+      res.json({ ok: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
