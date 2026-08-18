@@ -3,13 +3,16 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { useUI } from "../context/UIContext";
+import { useAuth } from "../context/AuthContext";
 import { DarkModeToggle } from "../components/DarkModeToggle";
 import { LangToggle } from "../components/LangToggle";
 import { api, type StatusData } from "../lib/api";
 import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock, MessageSquare, Loader2 } from "lucide-react";
 
-export default function Overview({ user }: { user: { username?: string; role?: string } | null }) {
+export default function Overview() {
   const { t } = useUI();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super-admin";
   const [status, setStatus] = useState<StatusData | null>(null);
   const [openTickets, setOpenTickets] = useState<number>(0);
   const [commands, setCommands] = useState<number>(0);
@@ -56,7 +59,7 @@ export default function Overview({ user }: { user: { username?: string; role?: s
           <h1 className="text-2xl font-bold tracking-tight">{t("overview.title")}</h1>
           <p className="text-muted-foreground text-sm">
             {t("overview.greeting")} <strong>{user?.username}</strong> · {t("overview.role")}{" "}
-            <Badge variant={user?.role === "admin" ? "default" : "secondary"}>{user?.role}</Badge>
+            <Badge variant={isAdmin ? "default" : "secondary"}>{user?.role}</Badge>
           </p>
         </div>
         <div className="flex items-center gap-2">

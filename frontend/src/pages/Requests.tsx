@@ -3,6 +3,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 interface RequestRow {
   threadId: string;
@@ -17,6 +18,7 @@ interface RequestsResponse { guildId: string | null; forumId: string | null; req
 const STATUSES = ["Tous", "Demandé", "Ajouté", "Refusé", "Doublon"];
 
 export default function Requests() {
+  const { isSuperAdmin } = useAuth();
   const [data, setData] = useState<RequestsResponse | null>(null);
   const [filter, setFilter] = useState<string>("Tous");
   const [err, setErr] = useState("");
@@ -103,7 +105,9 @@ export default function Requests() {
                       Post
                     </a>
                   )}
-                  <Button size="sm" variant="destructive" onClick={() => setToDelete(r)}>Supprimer</Button>
+                  {isSuperAdmin && (
+                    <Button size="sm" variant="destructive" onClick={() => setToDelete(r)}>Supprimer</Button>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -111,7 +115,7 @@ export default function Requests() {
         ))}
       </div>
 
-      {toDelete && (
+      {toDelete && isSuperAdmin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <Card className="w-full max-w-md">
             <CardContent className="p-5 space-y-4">

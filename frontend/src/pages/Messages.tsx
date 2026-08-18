@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { Send, Mail, Search, Trash2, X } from "lucide-react";
 import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 interface Contact {
   id: string; discordId: string; username: string; lastMessage: string | null; lastAt: string; unreadCount: number;
@@ -14,6 +16,8 @@ interface Thread { contact: Contact | null; messages: DmMessage[] }
 interface Member { id: string; username: string; display: string; avatar: string }
 
 export default function Messages() {
+  const { isSuperAdmin } = useAuth();
+  const [searchParams] = useSearchParams();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [active, setActive] = useState<Contact | null>(null);
   const [thread, setThread] = useState<DmMessage[]>([]);
@@ -37,7 +41,7 @@ export default function Messages() {
     try {
       const c = await api<Contact[]>("/api/dm/contacts");
       setContacts(c);
-      const dmId = new URLSearchParams(window.location.search).get("dm");
+      const dmId = searchParams.get("dm");
       if (dmId) {
         const ex = c.find((x) => x.discordId === dmId);
         if (ex) { if (!active || active.discordId !== dmId) openThread(ex); }
@@ -122,9 +126,11 @@ export default function Messages() {
                 <p className="text-xs text-muted-foreground truncate mt-0.5">{c.lastMessage || "—"}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(c.lastAt).toLocaleString()}</p>
               </button>
-              <button onClick={() => deleteConversation(c.discordId)} className="p-2 text-muted-foreground hover:text-red-400 shrink-0">
-                <Trash2 size={14} />
-              </button>
+              {isSuperAdmin && (
+                <button onClick={() => deleteConversation(c.discordId)} className="p-2 text-muted-foreground hover:text-red-400 shrink-0">
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
           ))}
         </CardContent>
@@ -136,9 +142,11 @@ export default function Messages() {
             <>
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold">{active.username} <span className="text-xs text-muted-foreground">({active.discordId})</span></h2>
-                <button onClick={() => deleteConversation(active.discordId)} className="text-xs text-muted-foreground hover:text-red-400 flex items-center gap-1">
-                  <Trash2 size={12} /> Supprimer
-                </button>
+                {isSuperAdmin && (
+                  <button onClick={() => deleteConversation(active.discordId)} className="text-xs text-muted-foreground hover:text-red-400 flex items-center gap-1">
+                    <Trash2 size={12} /> Supprimer
+                  </button>
+                )}
               </div>
               <div className="space-y-2 max-h-[45vh] overflow-y-auto">
                 {thread.length === 0 && <p className="text-sm text-muted-foreground">Aucun message.</p>}
@@ -150,9 +158,11 @@ export default function Messages() {
                         <p className="whitespace-pre-wrap break-words">{m.content}</p>
                       </div>
                     </div>
-                    <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-red-400 shrink-0 mt-1">
-                      <X size={12} />
-                    </button>
+                    {isSuperAdmin && (
+                      <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-red-400 shrink-0 mt-1">
+                        <X size={12} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

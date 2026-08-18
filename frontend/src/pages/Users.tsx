@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { MessageSquare, ShieldBan, AlertTriangle, Star, Trophy } from "lucide-react";
 import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 interface BotUser {
   discordId: string;
@@ -18,6 +20,8 @@ interface BotUser {
 }
 
 export default function Users() {
+  const { isSuperAdmin } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<BotUser[]>([]);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -87,7 +91,7 @@ export default function Users() {
                   </div>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <Button size="sm" variant="ghost" onClick={() => window.location.href = `/messages?dm=${u.discordId}`}><MessageSquare size={14} /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => navigate(`/messages?dm=${u.discordId}`)}><MessageSquare size={14} /></Button>
                   <Button size="sm" variant="destructive" onClick={() => {
                     const reason = prompt("Raison du warn :");
                     if (reason === null) return;
@@ -99,13 +103,15 @@ export default function Users() {
                         if (r?.action) alert(`⚠️ Seuil atteint (${r.activeWarns} warns actifs) → action automatique : ${r.action.toUpperCase()} déclenché !`);
                       });
                   }}><AlertTriangle size={14} /></Button>
-                  <Button size="sm" variant={blacklistedIds.has(u.discordId) ? "accent" : "destructive"} onClick={() => {
-                    const isBl = blacklistedIds.has(u.discordId);
-                    const doIt = isBl
-                      ? api(`/api/blacklist/${u.discordId}`, { method: "DELETE" })
-                      : (() => { const reason = prompt("Raison de la blacklist :") ?? "Dashboard"; return api("/api/blacklist", { method: "POST", body: JSON.stringify({ discordId: u.discordId, reason }) }); })();
-                    doIt.then(() => load(search));
-                  }}><ShieldBan size={14} /></Button>
+                  {(!blacklistedIds.has(u.discordId) || isSuperAdmin) && (
+                    <Button size="sm" variant={blacklistedIds.has(u.discordId) ? "accent" : "destructive"} onClick={() => {
+                      const isBl = blacklistedIds.has(u.discordId);
+                      const doIt = isBl
+                        ? api(`/api/blacklist/${u.discordId}`, { method: "DELETE" })
+                        : (() => { const reason = prompt("Raison de la blacklist :") ?? "Dashboard"; return api("/api/blacklist", { method: "POST", body: JSON.stringify({ discordId: u.discordId, reason }) }); })();
+                      doIt.then(() => load(search));
+                    }}><ShieldBan size={14} /></Button>
+                  )}
                 </div>
               </div>
               {expanded === u.discordId && (

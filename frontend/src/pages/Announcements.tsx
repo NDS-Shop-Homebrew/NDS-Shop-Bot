@@ -7,8 +7,10 @@ import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
 import { api, listChannels, type Announcement, type Channel } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Announcements() {
+  const { isSuperAdmin } = useAuth();
   const [items, setItems] = useState<Announcement[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [title, setTitle] = useState("");
@@ -106,7 +108,9 @@ export default function Announcements() {
               </div>
               <div className="flex gap-2 shrink-0">
                 <Button size="sm" onClick={() => send(a.id)}>Envoyer</Button>
-                <Button size="sm" variant="destructive" onClick={() => remove(a.id)}>Suppr.</Button>
+                {isSuperAdmin && (
+                  <Button size="sm" variant="destructive" onClick={() => remove(a.id)}>Suppr.</Button>
+                )}
               </div>
             </CardContent>
           </Card>

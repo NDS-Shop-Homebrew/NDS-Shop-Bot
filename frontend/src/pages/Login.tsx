@@ -5,10 +5,13 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Button } from "../components/ui/button";
 import { useUI } from "../context/UIContext";
-import { login } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-export default function Login({ onSuccess }: { onSuccess: () => void }) {
+export default function Login() {
   const { t } = useUI();
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +22,9 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
-      onSuccess();
+      const res = await login(email, password);
+      if (res.ok) navigate("/overview");
+      else setError(res.message || "Erreur");
     } catch (err: any) {
       setError(err.message);
     } finally {
