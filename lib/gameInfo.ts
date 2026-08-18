@@ -42,9 +42,9 @@ export function buildEmbed(template: string, g: GameForEmbed, color: string) {
   return embed;
 }
 
-export const DEFAULT_TEMPLATE = `**Auteur :** {{author}}
-**Version :** {{version}}
-**Systèmes :** {{systems}}
-**Title ID :** {{titleId}}
+export const DEFAULT_TEMPLATE = `**Author:** {{author}}
+**Version:** {{version}}
+**Systems:** {{systems}}
+**Title ID:** {{titleId}}
 
-[Télécharger]({{downloadUrl}}) · [Voir la fiche]({{gameUrl}})`;
+[Download]({{downloadUrl}}) · [View page]({{gameUrl}})`;

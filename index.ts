@@ -92,14 +92,14 @@ async function updateGameInfo(client: ClientType, force = false, ping = false) {
 
   const links = (g: Game) => {
     const dl = (g.downloads && Object.values(g.downloads)[0]?.url) || `${API_BASE_URL}/games/${encodeURIComponent(g.fileName || "")}`;
-    return `[Télécharger](${dl}) · [Fiche](${API_BASE_URL}/game/${g.fileName || ""})`;
+    return `[Download](${dl}) · [Info](${API_BASE_URL}/game/${g.fileName || ""})`;
   };
 
   const [hero, ...rest] = latest;
-  const embeds: EmbedBuilder[] = [buildEmbed(template, hero, "#0099ff").setFooter({ text: "Derniers ajouts au catalogue" })];
+  const embeds: EmbedBuilder[] = [buildEmbed(template, hero, "#0099ff").setFooter({ text: "Latest additions to the catalogue" })];
 
   if (rest.length) {
-    const list = new EmbedBuilder().setColor("#0099ff").setTitle("🕹️ Derniers ajouts");
+    const list = new EmbedBuilder().setColor("#0099ff").setTitle("Latest additions");
     for (let i = 0; i < Math.min(rest.length, 12); i += 2) {
       const g1 = rest[i];
       const g2 = rest[i + 1];
