@@ -32,7 +32,7 @@ export async function stats() {
 }
 
 export async function teamIds() {
-  return get<{ discordIds: string[] }>("/api/v1/team");
+  return get<{ members: { id: string; role?: string }[] }>("/api/v1/team");
 }
 
 export async function presence(id: string): Promise<{ discord_status: string }> {

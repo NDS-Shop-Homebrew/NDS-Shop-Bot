@@ -15,18 +15,19 @@ export default {
     await interaction.deferReply();
 
     try {
-      const { discordIds } = await teamIds();
-      if (!discordIds || !discordIds.length) {
+      const { members } = await teamIds();
+      if (!members || !members.length) {
         return interaction.editReply(t.teamEmpty);
       }
       const rows: string[] = [];
-      for (const id of discordIds) {
+      for (const m of members) {
+        const id = m.id;
         try {
           const p = await presence(id);
           const status = STATUS_EMOJI[p.discord_status as keyof typeof STATUS_EMOJI] || STATUS_EMOJI.offline;
-          rows.push(`${status} <@${id}> · ${t.status[p.discord_status as keyof typeof t.status] || t.status.offline}`);
+          rows.push(`${status} <@${id}>${m.role ? ` — ${m.role}` : ""} · ${t.status[p.discord_status as keyof typeof t.status] || t.status.offline}`);
         } catch {
-          rows.push(`${STATUS_EMOJI.offline} <@${id}> · ${t.status.offline}`);
+          rows.push(`${STATUS_EMOJI.offline} <@${id}>${m.role ? ` — ${m.role}` : ""} · ${t.status.offline}`);
         }
       }
       const embed = new EmbedBuilder()

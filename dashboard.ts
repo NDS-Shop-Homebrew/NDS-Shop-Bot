@@ -44,8 +44,19 @@ function createDashboard(client: Client | null) {
   async function requireAdmin(req: Request, res: Response, next: NextFunction) {
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
     if (!session) return res.status(401).json({ error: "Non connecté" });
-    if ((session.user as AuthUser).role !== "admin") {
+    const role = (session.user as AuthUser).role;
+    if (role !== "admin" && role !== "super-admin") {
       return res.status(403).json({ error: "Accès réservé aux administrateurs" });
+    }
+    (req as AuthRequest).user = session.user as AuthUser;
+    next();
+  }
+
+  async function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+    const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
+    if (!session) return res.status(401).json({ error: "Non connecté" });
+    if ((session.user as AuthUser).role !== "super-admin") {
+      return res.status(403).json({ error: "Accès réservé au super-admin" });
     }
     (req as AuthRequest).user = session.user as AuthUser;
     next();
@@ -166,7 +177,7 @@ where: { id: param(req, "id") },
     res.json(item);
   });
 
-  app.delete("/api/announcements/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/announcements/:id", requireSuperAdmin, async (req, res) => {
     await prisma.botAnnouncement.delete({ where: { id: param(req, "id") } });
     res.json({ ok: true });
   });
@@ -355,7 +366,7 @@ where: { id: param(req, "id") },
     res.json({ ok: true });
   });
 
-  app.delete("/api/blacklist/:discordId", requireAdmin, async (req, res) => {
+  app.delete("/api/blacklist/:discordId", requireSuperAdmin, async (req, res) => {
     await prisma.blacklist.delete({ where: { discordId: param(req, "discordId") } }).catch(() => {});
     res.json({ ok: true });
   });
@@ -410,7 +421,7 @@ where: { id: param(req, "id") },
     }
   });
 
-  app.delete("/api/dm/:userId", requireAdmin, async (req, res) => {
+  app.delete("/api/dm/:userId", requireSuperAdmin, async (req, res) => {
     try {
       const contact = await prisma.botDmContact.findUnique({ where: { discordId: param(req, "userId") } });
       if (contact) await prisma.botDmContact.delete({ where: { id: contact.id } });
@@ -420,7 +431,7 @@ where: { id: param(req, "id") },
     }
   });
 
-  app.delete("/api/dm/messages/:messageId", requireAdmin, async (req, res) => {
+  app.delete("/api/dm/messages/:messageId", requireSuperAdmin, async (req, res) => {
     try {
       await prisma.botDmMessage.delete({ where: { id: param(req, "messageId") } }).catch(() => {});
       res.json({ ok: true });
@@ -542,7 +553,7 @@ where: { id: param(req, "id") },
     }
   });
 
-  app.delete("/api/requests/:threadId", requireAdmin, async (req, res) => {
+  app.delete("/api/requests/:threadId", requireSuperAdmin, async (req, res) => {
     try {
       const threadId = param(req, "threadId");
       const ch = await client?.channels.fetch(threadId).catch(() => null);
@@ -569,6 +580,11 @@ where: { id: param(req, "id") },
     }
     await botLog("info", `Import réglages : ${n} clés restaurées`);
     res.json({ ok: true, imported: n });
+  });
+
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) return next();
+    res.sendFile(path.join(dist, "index.html"));
   });
 
   return app;

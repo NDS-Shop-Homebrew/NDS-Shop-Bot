@@ -11,11 +11,15 @@ const statement = {
 };
 
 const ac = createAccessControl(statement);
-const adminRole = ac.newRole({
+const superAdminRole = ac.newRole({
   user: ["create", "list", "set-role", "ban", "impersonate", "delete", "set-password", "get", "update"],
   session: ["list", "revoke", "delete"],
 });
-const member = ac.newRole({ user: [], session: [] });
+const adminRole = ac.newRole({
+  user: ["create", "list", "ban", "set-password", "get", "update"],
+  session: ["list", "revoke"],
+});
+const memberRole = ac.newRole({ user: [], session: [] });
 
 export const auth = betterAuth({
   appName: "NDS-Shop Bot Dashboard",
@@ -34,8 +38,8 @@ export const auth = betterAuth({
     username(),
     admin({
       ac,
-      roles: { admin: adminRole, member },
-      adminRoles: ["admin"],
+      roles: { "super-admin": superAdminRole, admin: adminRole, member: memberRole },
+      adminRoles: ["super-admin", "admin"],
       defaultRole: "member",
     }),
   ],
