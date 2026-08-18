@@ -13,7 +13,7 @@ import {
   type Client as ClientType,
 } from "discord.js";
 import "dotenv/config";
-import { GUILD_ID, ROLE_GAME_UPDATES, CHANNELS, POLL_INTERVAL_MS } from "./config.ts";
+import { GUILD_ID, ROLE_GAME_UPDATES, CHANNELS, POLL_INTERVAL_MS, API_BASE_URL } from "./config.ts";
 import { listGames } from "./lib/api.ts";
 import { botLog } from "./lib/botLog.ts";
 import { canUse, loadMatrix } from "./lib/permissions.ts";
@@ -89,7 +89,29 @@ async function updateGameInfo(client: ClientType, force = false, ping = false) {
 
   const tplRow = await prisma.botSetting.findUnique({ where: { key: "gameInfoTemplate" } });
   const template = tplRow?.value || DEFAULT_TEMPLATE;
-  const embeds = latest.map((g) => buildEmbed(template, g, "#0099ff"));
+
+  const links = (g: Game) => {
+    const dl = (g.downloads && Object.values(g.downloads)[0]?.url) || `${API_BASE_URL}/games/${encodeURIComponent(g.fileName || "")}`;
+    return `[Télécharger](${dl}) · [Fiche](${API_BASE_URL}/game/${g.fileName || ""})`;
+  };
+
+  const [hero, ...rest] = latest;
+  const embeds: EmbedBuilder[] = [buildEmbed(template, hero, "#0099ff").setFooter({ text: "Derniers ajouts au catalogue" })];
+
+  if (rest.length) {
+    const list = new EmbedBuilder().setColor("#0099ff").setTitle("🕹️ Derniers ajouts");
+    for (let i = 0; i < Math.min(rest.length, 12); i += 2) {
+      const g1 = rest[i];
+      const g2 = rest[i + 1];
+      list.addFields(
+        { name: (g1.title || "—").slice(0, 80), value: links(g1), inline: true },
+        { name: g2 ? (g2.title || "—").slice(0, 80) : "\u200b", value: g2 ? links(g2) : "\u200b", inline: true },
+        { name: "\u200b", value: "\u200b", inline: false }
+      );
+    }
+    embeds.push(list);
+  }
+
   const payload = { embeds };
   const hash = JSON.stringify(payload);
 
