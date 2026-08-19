@@ -142,10 +142,12 @@ async function updateGameInfo(client: ClientType, force = false, ping = false) {
     });
 
     if (ping) {
-      const role = guild?.roles.cache.find((r) => r.name === ROLE_GAME_UPDATES && r.mentionable);
+      const role = guild?.roles.cache.find((r) => r.name.toLowerCase() === ROLE_GAME_UPDATES.toLowerCase());
       if (role) {
         const titles = latest.slice(0, 3).map((g) => `**${g.title}**`).join(", ");
         await channel.send(`<@&${role.id}> — ${titles}${latest.length > 3 ? ` +${latest.length - 3}` : ""}`).catch(() => {});
+      } else {
+        await botLog("warn", `#game-info : rôle "${ROLE_GAME_UPDATES}" introuvable dans le cache du serveur — ping non envoyé`);
       }
     }
   } catch (err) {
