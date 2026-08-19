@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import { Skeleton } from "../components/ui/skeleton";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -73,9 +79,15 @@ export default function Requests() {
           </Button>
         ))}
       </div>
-      {err && <p className="text-sm text-red-600">{err}</p>}
+      {err && <Alert variant="destructive"><AlertDescription>{err}</AlertDescription></Alert>}
       <div className="space-y-3">
-        {!data && !err && <p className="text-sm text-muted-foreground">Chargement…</p>}
+        {!data && !err && (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-lg" />
+            ))}
+          </div>
+        )}
         {data?.requests.length === 0 && <p className="text-sm text-muted-foreground">—</p>}
         {data?.requests.map((r) => (
           <Card key={r.threadId}>
@@ -115,24 +127,22 @@ export default function Requests() {
         ))}
       </div>
 
-      {toDelete && isSuperAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <Card className="w-full max-w-md">
-            <CardContent className="p-5 space-y-4">
-              <p className="font-semibold">Supprimer la demande « {toDelete.title} » ?</p>
-              <p className="text-sm text-muted-foreground">
-                Le post sera retiré du forum Discord et la demande supprimée de la liste. Action irréversible.
-              </p>
-              <div className="flex gap-2 justify-end">
-                <Button variant="ghost" onClick={() => setToDelete(null)} disabled={busy}>Annuler</Button>
-                <Button variant="destructive" onClick={doDelete} disabled={busy}>
-                  {busy ? "Suppression…" : "Supprimer"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la demande</AlertDialogTitle>
+            <AlertDialogDescription>
+              « {toDelete?.title} » — le post sera retiré du forum Discord et la demande supprimée de la liste. Action irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" disabled={busy} onClick={doDelete}>
+              {busy ? "Suppression…" : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

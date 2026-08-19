@@ -3,6 +3,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { api } from "../lib/api";
 
@@ -58,11 +59,11 @@ export default function Settings() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Message de bienvenue (markdown)</Label>
-              <textarea
+              <Textarea
                 value={welcome}
                 onChange={(e) => setWelcome(e.target.value)}
                 rows={4}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="font-mono"
               />
               <Button onClick={() => saveSetting("welcomeMessage", welcome)}>Enregistrer</Button>
             </div>
@@ -85,12 +86,12 @@ export default function Settings() {
           </div>
           <div className="space-y-2">
             <Label>Template salon #game-info (dernier jeu ajouté)</Label>
-            <textarea
+            <Textarea
               value={gameInfo}
               onChange={(e) => setGameInfo(e.target.value)}
               rows={5}
               placeholder="Variables : {{title}} {{author}} {{version}} {{systems}} {{titleId}} {{stars}} {{downloadUrl}} {{gameUrl}} {{updated}}"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="font-mono"
             />
             <p className="text-xs text-muted-foreground">Variables disponibles : <code>{"{{title}}"}</code> <code>{"{{author}}"}</code> <code>{"{{version}}"}</code> <code>{"{{systems}}"}</code> <code>{"{{titleId}}"}</code> <code>{"{{stars}}"}</code> <code>{"{{downloadUrl}}"}</code> <code>{"{{gameUrl}}"}</code> <code>{"{{updated}}"}</code> — la boxart et l'icône sont affichées automatiquement dans l'embed.</p>
             <Button onClick={() => saveSetting("gameInfoTemplate", gameInfo)}>Enregistrer</Button>

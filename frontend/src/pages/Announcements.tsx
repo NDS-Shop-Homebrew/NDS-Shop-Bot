@@ -4,6 +4,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
 import { api, listChannels, type Announcement, type Channel } from "../lib/api";
@@ -69,11 +70,11 @@ export default function Announcements() {
               </div>
               <div className="space-y-1.5">
                 <Label>{"Contenu (markdown)"}</Label>
-                <textarea
+                <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   rows={8}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="font-mono"
                   placeholder="**Écrivez votre annonce en markdown…**"
                 />
               </div>

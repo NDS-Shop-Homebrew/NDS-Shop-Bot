@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
+import { Spinner } from "../components/ui/spinner";
 import { useUI } from "../context/UIContext";
 import { useAuth } from "../context/AuthContext";
 import { DarkModeToggle } from "../components/DarkModeToggle";
 import { LangToggle } from "../components/LangToggle";
 import { api, type StatusData } from "../lib/api";
-import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock, MessageSquare, Loader2 } from "lucide-react";
+import { RefreshCw, Bot, Server, Users, Gamepad2, Ticket, Command, ShieldBan, Clock, MessageSquare } from "lucide-react";
 
 export default function Overview() {
   const { t } = useUI();
@@ -66,22 +68,31 @@ export default function Overview() {
           <LangToggle />
           <DarkModeToggle />
           <Button onClick={load} variant="outline" size="sm" disabled={loading}>
-            {loading ? <Loader2 size={14} className="animate-spin" /> : t("overview.refresh")}
+            {loading ? <Spinner /> : t("overview.refresh")}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {cards.map((c) => (
-          <Card key={c.label}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
-                <c.icon size={14} className={c.accent === false ? "text-red-500" : "text-primary"} /> {c.label}
-              </div>
-              <p className="text-xl font-bold truncate">{c.value}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {!status
+          ? Array.from({ length: 9 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-4 w-20 mb-2" />
+                  <Skeleton className="h-6 w-14" />
+                </CardContent>
+              </Card>
+            ))
+          : cards.map((c) => (
+              <Card key={c.label}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
+                    <c.icon size={14} className={c.accent === false ? "text-red-500" : "text-primary"} /> {c.label}
+                  </div>
+                  <p className="text-xl font-bold truncate">{c.value}</p>
+                </CardContent>
+              </Card>
+            ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

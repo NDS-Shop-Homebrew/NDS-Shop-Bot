@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { api, listChannels, type Channel } from "../lib/api";
 
@@ -49,11 +50,11 @@ export default function Send() {
         </div>
         <div className="space-y-1.5">
           <Label>Message (markdown)</Label>
-          <textarea
+          <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={5}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="font-mono"
           />
         </div>
         <Button variant="accent" className="w-full" onClick={send}>Envoyer</Button>

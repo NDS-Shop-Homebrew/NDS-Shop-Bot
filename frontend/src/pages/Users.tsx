@@ -4,6 +4,8 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Checkbox } from "../components/ui/checkbox";
 import { MessageSquare, ShieldBan, AlertTriangle, Star, Trophy } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -63,10 +65,10 @@ export default function Users() {
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un utilisateur (ID ou nom)…" />
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">{visible.length} utilisateur{visible.length > 1 ? "s" : ""} trouvé{visible.length > 1 ? "s" : ""}</p>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" checked={onlyBlack} onChange={(e) => setOnlyBlack(e.target.checked)} />
+            <Label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={onlyBlack} onCheckedChange={(v) => setOnlyBlack(v === true)} />
               Blacklistés uniquement
-            </label>
+            </Label>
           </div>
         </CardContent>
       </Card>
