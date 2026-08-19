@@ -112,7 +112,15 @@ async function updateGameInfo(client: ClientType, force = false, ping = false) {
     embeds.push(list);
   }
 
-  const payload = { embeds };
+  const role = guild?.roles.cache.find((r) => r.name.toLowerCase() === ROLE_GAME_UPDATES.toLowerCase());
+  if (ping && !role) {
+    await botLog("warn", `#game-info : rôle "${ROLE_GAME_UPDATES}" introuvable dans le cache du serveur — ping non envoyé`);
+  }
+
+  const payload = {
+    ...(role ? { content: `||<@&${role.id}>||` } : {}),
+    embeds,
+  };
   const hash = JSON.stringify(payload);
 
   try {
@@ -140,16 +148,6 @@ async function updateGameInfo(client: ClientType, force = false, ping = false) {
       update: { value: hash },
       create: { key: "gameInfoHash", value: hash },
     });
-
-    if (ping) {
-      const role = guild?.roles.cache.find((r) => r.name.toLowerCase() === ROLE_GAME_UPDATES.toLowerCase());
-      if (role) {
-        const titles = latest.slice(0, 3).map((g) => `**${g.title}**`).join(", ");
-        await channel.send(`<@&${role.id}> — ${titles}${latest.length > 3 ? ` +${latest.length - 3}` : ""}`).catch(() => {});
-      } else {
-        await botLog("warn", `#game-info : rôle "${ROLE_GAME_UPDATES}" introuvable dans le cache du serveur — ping non envoyé`);
-      }
-    }
   } catch (err) {
     await botLog("error", `#game-info : ${(err as Error).message}`);
   }
