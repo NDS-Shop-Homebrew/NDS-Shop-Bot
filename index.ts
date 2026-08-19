@@ -133,9 +133,10 @@ async function updateGameInfo(client: ClientType, force = false, ping = false) {
     const msgId = msgRow?.value;
     const cached = msgId ? channel.messages.cache.get(msgId) : null;
     const msg = cached || (msgId ? await channel.messages.fetch(msgId).catch(() => null) : null);
-    if (msg) {
+    if (msg && !ping) {
       await msg.edit(payload);
     } else {
+      if (msg) await msg.delete().catch(() => {});
       const sent = await channel.send(payload);
       await prisma.botSetting.upsert({
         where: { key: "gameInfoMessageId" },
