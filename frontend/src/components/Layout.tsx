@@ -47,7 +47,7 @@ function NavSection({ title, items }: { title: string; items: { to: Tab; icon: a
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.to}>
-            <SidebarMenuButton asChild isActive={location.pathname === `/${item.to}`} tooltip={t(item.key)}>
+            <SidebarMenuButton asChild isActive={location.pathname === `/${item.to}`} tooltip={t(item.key)} className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary data-[active=true]:hover:text-primary-foreground">
               <NavLink to={`/${item.to}`}>
                 <item.icon />
                 <span>{t(item.key)}</span>
@@ -79,7 +79,7 @@ export default function Layout() {
               <SidebarMenuButton size="lg" asChild>
                 <a href="/">
                   <img src="/logo.png" alt="N" className="size-8 rounded-lg" />
-                  <div className="min-w-0">
+                  <div className="group-data-[collapsible=icon]:hidden min-w-0">
                     <p className="font-bold leading-tight truncate">NDS-Shop</p>
                     <p className="text-xs text-muted-foreground">{t("app.title")}</p>
                   </div>
@@ -100,7 +100,7 @@ export default function Layout() {
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary font-bold">
                   {user?.username?.slice(0, 2).toUpperCase() || "?"}
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="group-data-[collapsible=icon]:hidden min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{user?.username}</p>
                   <Badge variant={user?.role === "member" ? "secondary" : "default"} className="mt-0.5">
                     {user?.role}
@@ -109,9 +109,11 @@ export default function Layout() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <div className="flex items-center gap-1 p-2">
-                <DarkModeToggle />
-                <LangToggle />
+              <div className="group-data-[collapsible=icon]:justify-center flex items-center gap-1 p-2">
+                <div className="group-data-[collapsible=icon]:hidden flex items-center gap-1">
+                  <DarkModeToggle />
+                  <LangToggle />
+                </div>
                 <Button variant="ghost" size="icon" onClick={onLogout} title={t("nav.logout")} className="text-muted-foreground hover:text-destructive">
                   <LogOut />
                 </Button>
