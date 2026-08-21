@@ -34,13 +34,6 @@ function createDashboard(client: Client | null) {
 
   app.all("/api/auth/{*path}", toNodeHandler(auth));
 
-  async function requireAuth(req: Request, res: Response, next: NextFunction) {
-    const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
-    if (!session) return res.status(401).json({ error: "Non connecté" });
-    (req as AuthRequest).user = session.user as AuthUser;
-    next();
-  }
-
   async function requireAdmin(req: Request, res: Response, next: NextFunction) {
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
     if (!session) return res.status(401).json({ error: "Non connecté" });
@@ -78,7 +71,7 @@ function createDashboard(client: Client | null) {
     res.json({ user: session?.user || null });
   });
 
-  app.get("/api/status", requireAuth, async (req, res) => {
+  app.get("/api/status", requireAdmin, async (req, res) => {
     const guild = guildInfo();
     const games = getGamesCache().length;
     res.json({
@@ -89,7 +82,7 @@ function createDashboard(client: Client | null) {
     });
   });
 
-  app.get("/api/games", requireAuth, async (req, res) => {
+  app.get("/api/games", requireAdmin, async (req, res) => {
     try {
       let games = await listGames();
       const q = String(req.query.search || "").toLowerCase();
@@ -104,7 +97,7 @@ function createDashboard(client: Client | null) {
     }
   });
 
-  app.get("/api/channels", requireAuth, async (req, res) => {
+  app.get("/api/channels", requireAdmin, async (req, res) => {
     const guild = client?.guilds?.cache.get(GUILD_ID);
     if (!guild) return res.json([]);
     const all = (await guild.channels.fetch()).filter((ch): ch is NonThreadGuildBasedChannel => !!ch);
@@ -151,7 +144,7 @@ function createDashboard(client: Client | null) {
     res.json({ ok: true, synced });
   });
 
-  app.get("/api/announcements", requireAuth, async (_req, res) => {
+  app.get("/api/announcements", requireAdmin, async (_req, res) => {
     const items = await prisma.botAnnouncement.findMany({ orderBy: { createdAt: "desc" } });
     res.json(items);
   });
@@ -220,13 +213,13 @@ where: { id: param(req, "id") },
     }
   });
 
-  app.get("/api/logs", requireAuth, async (req, res) => {
+  app.get("/api/logs", requireAdmin, async (req, res) => {
     const limit = Math.min(Number(req.query.limit || 100), 500);
     const logs = await prisma.botLog.findMany({ orderBy: { createdAt: "desc" }, take: limit });
     res.json(logs);
   });
 
-  app.get("/api/settings", requireAuth, async (_req, res) => {
+  app.get("/api/settings", requireAdmin, async (_req, res) => {
     const rows = await prisma.botSetting.findMany();
     const settings: Record<string, string> = {};
     for (const r of rows) settings[r.key] = r.value;
@@ -257,7 +250,7 @@ where: { id: param(req, "id") },
     }
   });
 
-  app.get("/api/tickets", requireAuth, async (req, res) => {
+  app.get("/api/tickets", requireAdmin, async (req, res) => {
     const status = req.query.status || "all";
     const where = status === "all" ? {} : { status: String(status) };
     const tickets = await prisma.ticket.findMany({
@@ -293,7 +286,7 @@ where: { id: param(req, "id") },
     res.json({ ok: true });
   });
 
-  app.get("/api/users", requireAuth, async (req, res) => {
+  app.get("/api/users", requireAdmin, async (req, res) => {
     const search = String(req.query.search || "").toLowerCase();
     const limit = Math.min(Number(req.query.limit || 100), 200);
     const profiles = await prisma.userProfile.findMany({ orderBy: { xp: "desc" }, take: limit });
@@ -315,7 +308,7 @@ where: { id: param(req, "id") },
     res.json(out);
   });
 
-  app.get("/api/leveling", requireAuth, async (_req, res) => {
+  app.get("/api/leveling", requireAdmin, async (_req, res) => {
     const row = await prisma.botSetting.findUnique({ where: { key: "levelingConfig" } });
     res.json(row?.value ? JSON.parse(row.value) : { enabled: true, xpPerMessage: 15, excludedChannels: [], roles: [] });
   });
@@ -329,7 +322,7 @@ where: { id: param(req, "id") },
     res.json({ ok: true });
   });
 
-  app.get("/api/permissions", requireAuth, async (_req, res) => {
+  app.get("/api/permissions", requireAdmin, async (_req, res) => {
     const cmds = fs.readdirSync(path.join(import.meta.dirname, "commands")).filter((f) => f.endsWith(".ts")).map((f) => f.replace(/\.ts$/, ""));
     res.json({ matrix: await getMatrix(), roles: ROLE_ORDER, commands: cmds });
   });
@@ -339,7 +332,7 @@ where: { id: param(req, "id") },
     res.json({ ok: true });
   });
 
-  app.get("/api/commands", requireAuth, async (req, res) => {
+  app.get("/api/commands", requireAdmin, async (req, res) => {
     const limit = Math.min(Number(req.query.limit || 100), 500);
     const q = String(req.query.search || "").toLowerCase();
     const cmd = String(req.query.command || "");
@@ -351,7 +344,7 @@ where: { id: param(req, "id") },
     res.json(logs);
   });
 
-  app.get("/api/blacklist", requireAuth, async (_req, res) => {
+  app.get("/api/blacklist", requireAdmin, async (_req, res) => {
     res.json(await prisma.blacklist.findMany({ orderBy: { createdAt: "desc" } }));
   });
 
@@ -396,11 +389,11 @@ where: { id: param(req, "id") },
     res.json({ ok: true });
   });
 
-  app.get("/api/dm/contacts", requireAuth, async (_req, res) => {
+  app.get("/api/dm/contacts", requireAdmin, async (_req, res) => {
     res.json(await listContacts());
   });
 
-  app.get("/api/dm/contacts/:userId/messages", requireAuth, async (req, res) => {
+  app.get("/api/dm/contacts/:userId/messages", requireAdmin, async (req, res) => {
     const data = await getThread(param(req, "userId"));
     if (!data) return res.json({ contact: null, messages: [] });
     await markRead(param(req, "userId")).catch(() => {});
@@ -440,21 +433,21 @@ where: { id: param(req, "id") },
     }
   });
 
-  app.get("/api/warns", requireAuth, async (req, res) => {
+  app.get("/api/warns", requireAdmin, async (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.json([]);
     const warns = await prisma.warn.findMany({ where: { discordId: String(userId) }, orderBy: { createdAt: "desc" } });
     res.json(warns);
   });
 
-  app.get("/api/tickets/all", requireAuth, async (req, res) => {
+  app.get("/api/tickets/all", requireAdmin, async (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.json([]);
     const tickets = await prisma.ticket.findMany({ where: { userId: String(userId) }, orderBy: { createdAt: "desc" } });
     res.json(tickets);
   });
 
-  app.get("/api/members", requireAuth, async (req, res) => {
+  app.get("/api/members", requireAdmin, async (req, res) => {
     const q = String(req.query.search || "").toLowerCase();
     const members = await getGuildMembers(client);
     const out: { id: string; username: string; display: string; avatar: string }[] = [];
@@ -469,7 +462,7 @@ where: { id: param(req, "id") },
     res.json(out);
   });
 
-  app.get("/api/tickets/stats", requireAuth, async (_req, res) => {
+  app.get("/api/tickets/stats", requireAdmin, async (_req, res) => {
     const [open, closed] = await Promise.all([
       prisma.ticket.count({ where: { status: "open" } }),
       prisma.ticket.count({ where: { status: "closed" } }),
@@ -478,7 +471,7 @@ where: { id: param(req, "id") },
     res.json({ open, closed, total: open + closed, byCategory: byCat });
   });
 
-  app.get("/api/ticket-templates", requireAuth, async (_req, res) => {
+  app.get("/api/ticket-templates", requireAdmin, async (_req, res) => {
     const row = await prisma.botSetting.findUnique({ where: { key: "ticketTemplates" } });
     res.json(row?.value ? JSON.parse(row.value) : []);
   });
@@ -493,7 +486,7 @@ where: { id: param(req, "id") },
     res.json({ ok: true, templates });
   });
 
-  app.get("/api/warn-config", requireAuth, async (_req, res) => {
+  app.get("/api/warn-config", requireAdmin, async (_req, res) => {
     const row = await prisma.botSetting.findUnique({ where: { key: "warnConfig" } });
     res.json(row?.value ? JSON.parse(row.value) : { max: 3, action: "kick" });
   });
