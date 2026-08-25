@@ -1,6 +1,10 @@
 // Schéma Prisma du bot NDS-Shop — MÊME base de données que upload.db-nds-shop.fr.
 // Les tables User/Session/Account/Verification sont partagées (auth identique).
 // Les tables bot_* sont définies côté upload (source de vérité) et répliquées ici.
+//
+// ⚠️ Schéma PARTIEL : ne JAMAIS lancer `prisma db push` depuis ce repo.
+// Prisma verrait toutes les autres tables (user, session, game_request, …) comme « en trop »
+// et les SUPPRIMERAIT avec leurs données. `db push` uniquement depuis upload.db-nds-shop.fr/backend.
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
