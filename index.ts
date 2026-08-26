@@ -74,7 +74,7 @@ async function registerSlashCommands(client: ClientType) {
 
 async function updateGameInfo(client: ClientType, force = false, ping = false) {
   const guild = client.guilds.cache.get(GUILD_ID);
-  const channel = guild?.channels.cache.find((c) => c.name === CHANNELS.gameInfo && c.isTextBased()) as import("discord.js").TextChannel | undefined;
+  const channel = guild?.channels.cache.get(CHANNELS.gameInfo) as import("discord.js").TextChannel | undefined;
   if (!channel || gamesCache.length === 0) return;
 
   let count = 5;
@@ -158,7 +158,6 @@ async function ensureChannels(client: ClientType) {
   const guild = client.guilds.cache.get(GUILD_ID);
   if (!guild) return;
   const desired = [
-    { name: CHANNELS.gameInfo, parent: "📢 INFORMATION", topic: "Derniers jeux ajoutés au catalogue — mis à jour automatiquement." },
     { name: "welcome", parent: "📢 INFORMATION", topic: "Welcome! Introduce yourself and say hi." },
   ];
   for (const d of desired) {

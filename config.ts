@@ -6,7 +6,7 @@ export const API_BASE_URL = "https://db-nds-shop.fr";
 export const ROLE_GAME_UPDATES = "Game Updates";
 
 export const CHANNELS = {
-  gameInfo: "game-info",
+  gameInfo: "1537993420985995424",
   gameRequests: "game-requests",
   suggestions: "suggestions",
   bugReports: "bug-reports",
