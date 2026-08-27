@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/NDS-Shop-team/NDS-Shop-Bot#readme",
   "dependencies": {
-    "@nds-shop/prisma": "file:../packages/prisma",
+    "@nds-shop/prisma": "github:NDS-Shop-Homebrew/prisma",
     "bcrypt": "^6.0.0",
     "better-auth": "^1.6.29",
     "discord.js": "^14.24.2",
