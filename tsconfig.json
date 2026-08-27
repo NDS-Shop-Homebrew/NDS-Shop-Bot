@@ -1,17 +1,20 @@
 {
   "compilerOptions": {
-    "target": "ES2023",
+    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
     "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
   },
-  "include": ["config.ts", "server.ts", "index.ts", "dashboard.ts", "lib", "commands", "setup.ts"]
+  "include": ["server.ts", "setup.ts", "index.ts", "lib/**/*", "commands/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
