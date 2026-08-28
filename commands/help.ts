@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { detectLang } from "../lib/lang.ts";
+import { API_BASE_URL } from "../config.ts";
 
 export default {
   data: new SlashCommandBuilder().setName("help").setDescription("Aide / Help"),
@@ -25,7 +26,7 @@ export default {
       .setColor("#5865F2")
       .setTitle(fr ? "Commandes NDS-Shop" : "NDS-Shop commands")
       .setDescription(groups.map(([h, c]) => `**${h}**\n${c}`).join("\n\n"))
-      .setFooter({ text: "https://db-nds-shop.fr" });
+      .setFooter({ text: API_BASE_URL });
     await interaction.reply({ embeds: [embed] });
   },
 };

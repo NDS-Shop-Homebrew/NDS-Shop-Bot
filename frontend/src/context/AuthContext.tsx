@@ -14,7 +14,7 @@ interface AuthContextType {
   user: SessionUser | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
-  login: (email: string, password: string) => Promise<{ ok: boolean; message?: string }>;
+  login: (username: string, password: string) => Promise<{ ok: boolean; message?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -40,12 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const res = await fetch("/api/auth/sign-in/email", {
+  const login = async (username: string, password: string) => {
+    const res = await fetch("/api/auth/sign-in/username", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.error) {

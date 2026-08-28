@@ -57,7 +57,7 @@ export default function Send() {
             className="font-mono"
           />
         </div>
-        <Button variant="accent" className="w-full" onClick={send}>Envoyer</Button>
+        <Button variant="default" className="w-full" onClick={send}>Envoyer</Button>
         {done && <p className="text-xs text-accent">✅ Envoyé !</p>}
       </CardContent>
     </Card>

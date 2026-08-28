@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, type ChatInputCommandInteraction, type AutocompleteInteraction } from "discord.js";
 import { listGames } from "../lib/api.ts";
+import { API_BASE_URL } from "../config.ts";
 import { T, detectLang } from "../lib/lang.ts";
 
 export default {
@@ -35,7 +36,7 @@ export default {
       const embed = new EmbedBuilder()
         .setColor("#0072CE")
         .setTitle(`🕹️ ${g.title}`)
-        .setURL(`https://db-nds-shop.fr/game/${g.fileName}`)
+.setURL(`${API_BASE_URL}/game/${g.fileName}`)
         .setThumbnail(g.icon || null)
         .setImage(qrUrl || boxart || null)
         .setDescription(
@@ -53,7 +54,7 @@ export default {
         );
 
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(`https://db-nds-shop.fr/game/${g.fileName}`).setLabel(t.viewGame)
+        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(`${API_BASE_URL}/game/${g.fileName}`).setLabel(t.viewGame)
       );
 
       await interaction.editReply({ embeds: [embed], components: qrUrl ? [row] : [] });

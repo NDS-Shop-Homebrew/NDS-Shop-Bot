@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { listGames } from "../lib/api.ts";
+import { API_BASE_URL } from "../config.ts";
 import { T, detectLang } from "../lib/lang.ts";
 
 export default {
@@ -20,7 +21,7 @@ export default {
       const embed = new EmbedBuilder()
         .setColor("#0072CE")
         .setTitle(`🎮 ${g.title}`)
-        .setURL(`https://db-nds-shop.fr/game/${g.fileName}`)
+        .setURL(`${API_BASE_URL}/game/${g.fileName}`)
         .setThumbnail(g.icon || null)
         .addFields(
           { name: t.author, value: g.author || t.unknown, inline: true },

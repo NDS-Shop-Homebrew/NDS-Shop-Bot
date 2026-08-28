@@ -91,7 +91,7 @@ export default function Tickets() {
                       <Button size="sm" variant="destructive" onClick={() => close(tk.id)}>Fermer</Button>
                     </>
                   ) : (
-                    <Button size="sm" variant="accent" onClick={() => reopen(tk.id)}>Rouvrir</Button>
+                    <Button size="sm" variant="default" onClick={() => reopen(tk.id)}>Rouvrir</Button>
                   )}
                 </div>
               </div>

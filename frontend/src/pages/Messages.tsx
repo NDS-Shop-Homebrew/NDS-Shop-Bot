@@ -127,9 +127,9 @@ export default function Messages() {
                 <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(c.lastAt).toLocaleString()}</p>
               </button>
               {isSuperAdmin && (
-                <button onClick={() => deleteConversation(c.discordId)} className="p-2 text-muted-foreground hover:text-red-400 shrink-0">
+                <Button variant="ghost" size="icon" onClick={() => deleteConversation(c.discordId)} className="text-muted-foreground hover:text-red-400 shrink-0">
                   <Trash2 size={14} />
-                </button>
+                </Button>
               )}
             </div>
           ))}
@@ -155,13 +155,13 @@ export default function Messages() {
                     <div className={`flex-1 ${m.direction === "staff" ? "flex justify-end" : ""}`}>
                       <div className={`inline-block max-w-[85%] px-3 py-2 rounded-lg text-sm relative ${m.direction === "staff" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                         <p className="text-xs opacity-70">{m.author} · {new Date(m.createdAt).toLocaleString()}</p>
-                        <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                        <p className="whitespace-pre-wrap wrap-break-word">{m.content}</p>
                       </div>
                     </div>
                     {isSuperAdmin && (
-                      <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-red-400 shrink-0 mt-1">
+                      <Button variant="ghost" size="icon" onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 shrink-0 mt-1">
                         <X size={12} />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 ))}

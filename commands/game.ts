@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, type ChatInputCommandInteraction, type AutocompleteInteraction } from "discord.js";
 import { listGames } from "../lib/api.ts";
+import { API_BASE_URL } from "../config.ts";
 import { T, detectLang } from "../lib/lang.ts";
 
 export default {
@@ -51,7 +52,7 @@ export default {
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
           .setStyle(ButtonStyle.Link)
-          .setURL(`https://db-nds-shop.fr/game/${g.fileName}`)
+          .setURL(`${API_BASE_URL}/game/${g.fileName}`)
           .setLabel("Voir sur le site"),
         new ButtonBuilder()
           .setStyle(ButtonStyle.Secondary)

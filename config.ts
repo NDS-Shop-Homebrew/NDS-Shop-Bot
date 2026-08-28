@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 export const GUILD_ID = "1271186486070345843";
-export const API_BASE_URL = "https://db-nds-shop.fr";
+export const API_BASE_URL = process.env.SITE_URL || "https://db-nds-shop.fr";
 
 export const ROLE_GAME_UPDATES = "Game Updates";
 

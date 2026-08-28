@@ -5,6 +5,7 @@
   "main": "server.ts",
   "scripts": {
     "build": "tsc",
+    "dev": "ts-node server.ts",
     "start": "node dist/server.js",
     "setup": "ts-node setup.ts",
     "typecheck": "tsc --noEmit"
@@ -22,7 +23,7 @@
   },
   "homepage": "https://github.com/NDS-Shop-team/NDS-Shop-Bot#readme",
   "dependencies": {
-    "@nds-shop/prisma": "github:NDS-Shop-Homebrew/prisma",
+    "@nds-shop/prisma": "file:../prisma",
     "bcrypt": "^6.0.0",
     "better-auth": "^1.6.29",
     "discord.js": "^14.24.2",

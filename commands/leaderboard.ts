@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { API_BASE_URL } from "../config.ts";
 import prisma from "../lib/db.ts";
 import { detectLang } from "../lib/lang.ts";
 
@@ -20,7 +21,7 @@ export default {
     const embed = new EmbedBuilder()
       .setColor("#F1C40F")
       .setTitle(lang === "fr" ? "🏆 Classement XP" : "🏆 XP Leaderboard")
-      .setThumbnail("https://db-nds-shop.fr/logo.png")
+      .setThumbnail(`${API_BASE_URL}/logo.png`)
       .setDescription(
         top
           .map((p, i) => `${medals[i] || `${i + 1}.`} **<@${p.discordId}>** — Niveau **${p.level}** ✅ ${Number(p.xp)} XP`)

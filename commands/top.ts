@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { listGames } from "../lib/api.ts";
+import { API_BASE_URL } from "../config.ts";
 import prisma from "../lib/db.ts";
 import { detectLang } from "../lib/lang.ts";
 
@@ -26,7 +27,7 @@ export default {
     const embed = new EmbedBuilder()
       .setColor("#0099ff")
       .setTitle(lang === "fr" ? "🔥 Jeux populaires" : "🔥 Popular games")
-      .setThumbnail("https://db-nds-shop.fr/logo.png")
+      .setThumbnail(`${API_BASE_URL}/logo.png`)
       .setDescription(
         top
           .map(([gTitle, n], i) => {

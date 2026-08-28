@@ -1,5 +1,5 @@
 import type { Client, ThreadChannel } from "discord.js";
-import { GUILD_ID, CHANNELS } from "../config.ts";
+import { GUILD_ID, CHANNELS, API_BASE_URL } from "../config.ts";
 import { norm, baseTitle } from "./norm.ts";
 import prisma from "./db.ts";
 
@@ -33,7 +33,7 @@ export async function handleThreadCreate(client: Client | null, thread: ThreadCh
     );
     if (!field?.value) return;
 
-    await prisma.gameRequest.upsert({
+    await prisma.botGameRequest.upsert({
       where: { threadId: thread.id },
       update: { discordId: field.value, title: thread.name, tagId: thread.appliedTags?.[0] || null },
       create: {
@@ -59,7 +59,7 @@ export async function handleThreadCreate(client: Client | null, thread: ThreadCh
 export async function handleThreadUpdate(client: Client | null, _oldThread: ThreadChannel, newThread: ThreadChannel) {
   if (!newThread.parent || newThread.parent.name !== CHANNELS.gameRequests) return;
   try {
-    const req = await prisma.gameRequest.findUnique({ where: { threadId: newThread.id } });
+    const req = await prisma.botGameRequest.findUnique({ where: { threadId: newThread.id } });
     if (!req) return;
     const newTagId = newThread.appliedTags?.[0] || null;
     if (newTagId === req.tagId) return;
@@ -68,7 +68,7 @@ export async function handleThreadUpdate(client: Client | null, _oldThread: Thre
       (newThread.parent as import("discord.js").ForumChannel).availableTags?.find((t) => t.id === newTagId)?.name || "mis à jour";
     const status = tagName.replace(/^\S+\s*/, "") || tagName;
 
-    await prisma.gameRequest.update({
+    await prisma.botGameRequest.update({
       where: { threadId: newThread.id },
       data: { tagId: newTagId, status },
     });
@@ -88,7 +88,7 @@ export async function handleThreadUpdate(client: Client | null, _oldThread: Thre
 
 export async function notifyAddedGames(client: Client | null, addedGames: { title: string; fileName: string }[]) {
   try {
-    const open = await prisma.gameRequest.findMany({ where: { status: "Demandé" } });
+    const open = await prisma.botGameRequest.findMany({ where: { status: "Demandé" } });
     if (!open.length || !addedGames.length) return;
 
     const guild = client?.guilds.cache.get(GUILD_ID);
@@ -101,9 +101,9 @@ export async function notifyAddedGames(client: Client | null, addedGames: { titl
         await sendDm(
           client,
           req.discordId,
-          `Bonne nouvelle : ton jeu **${req.title}** a été ajouté au catalogue !\nhttps://db-nds-shop.fr/game/${game.fileName}`
+          `Bonne nouvelle : ton jeu **${req.title}** a été ajouté au catalogue !\n${API_BASE_URL}/game/${game.fileName}`
         );
-        await prisma.gameRequest.update({
+await prisma.botGameRequest.update({
           where: { threadId: req.threadId },
           data: { status: "Ajouté", tagId: addedTag?.id || null },
         });
