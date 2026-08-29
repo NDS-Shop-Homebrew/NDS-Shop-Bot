@@ -51,7 +51,7 @@ const commands = new Map<string, Command>();
 async function loadCommands() {
   const dir = path.join(import.meta.dirname, "commands");
   for (const file of fs.readdirSync(dir)) {
-    if (!file.endsWith(".ts") && !file.endsWith(".js")) continue;
+    if (!file.endsWith(".js")) continue; // prod: only .js files in dist/
     const mod = (await import(`./commands/${file}`)) as { default: Command };
     commands.set(mod.default.data.name, mod.default);
   }
