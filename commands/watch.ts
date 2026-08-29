@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from "discord.js";
-import { listGames } from "../lib/api.ts";
-import prisma from "../lib/db.ts";
-import { T, detectLang } from "../lib/lang.ts";
+import { listGames } from "../lib/api.js";
+import prisma from "../lib/db.js";
+import { T, detectLang } from "../lib/lang.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -23,7 +23,7 @@ export default {
     const g = games.find((x) => x.title.toLowerCase() === game.toLowerCase()) || games.find((x) => x.title.toLowerCase().includes(game.toLowerCase()));
     if (!g) return interaction.reply(t.gameNotFound(game));
 
-    const row = await prisma.gameSub.upsert({
+    const row = await prisma.botGameSub.upsert({
       where: { discordId: interaction.user.id },
       update: {},
       create: { discordId: interaction.user.id, games: "[]" },
@@ -31,11 +31,11 @@ export default {
     const watched = JSON.parse(row.games || "[]") as string[];
     if (!watched.includes(g.title)) {
       watched.push(g.title);
-      await prisma.gameSub.update({ where: { discordId: interaction.user.id }, data: { games: JSON.stringify(watched) } });
+      await prisma.botGameSub.update({ where: { discordId: interaction.user.id }, data: { games: JSON.stringify(watched) } });
       await interaction.reply(`👁️ Vous serez notifié quand **${g.title}** sera mis à jour.`);
     } else {
       const next = watched.filter((x) => x !== g.title);
-      await prisma.gameSub.update({ where: { discordId: interaction.user.id }, data: { games: JSON.stringify(next) } });
+      await prisma.botGameSub.update({ where: { discordId: interaction.user.id }, data: { games: JSON.stringify(next) } });
       await interaction.reply(`🔕 Notifications désactivées pour **${g.title}**.`);
     }
   },

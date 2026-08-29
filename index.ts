@@ -13,16 +13,16 @@ import {
   type Client as ClientType,
 } from "discord.js";
 import "dotenv/config";
-import { GUILD_ID, ROLE_GAME_UPDATES, CHANNELS, POLL_INTERVAL_MS, API_BASE_URL } from "./config.ts";
-import { listGames } from "./lib/api.ts";
-import { botLog } from "./lib/botLog.ts";
-import { canUse, loadMatrix } from "./lib/permissions.ts";
-import { sendTicketMenu, createTicket, relayMessage, closeTicket } from "./lib/tickets.ts";
-import { buildEmbed, DEFAULT_TEMPLATE } from "./lib/gameInfo.ts";
-import { handleThreadCreate, handleThreadUpdate, handleThreadDelete, notifyAddedGames } from "./lib/gameRequests.ts";
-import { getConfig as getLevelingConfig, grantXp } from "./lib/leveling.ts";
-import { recordIncoming } from "./lib/dm.ts";
-import prisma from "./lib/db.ts";
+import { GUILD_ID, ROLE_GAME_UPDATES, CHANNELS, POLL_INTERVAL_MS, API_BASE_URL } from "./config.js";
+import { listGames } from "./lib/api.js";
+import { botLog } from "./lib/botLog.js";
+import { canUse, loadMatrix } from "./lib/permissions.js";
+import { sendTicketMenu, createTicket, relayMessage, closeTicket } from "./lib/tickets.js";
+import { buildEmbed, DEFAULT_TEMPLATE } from "./lib/gameInfo.js";
+import { handleThreadCreate, handleThreadUpdate, handleThreadDelete, notifyAddedGames } from "./lib/gameRequests.js";
+import { getConfig as getLevelingConfig, grantXp } from "./lib/leveling.js";
+import { recordIncoming } from "./lib/dm.js";
+import prisma from "./lib/db.js";
 
 interface Command {
   data: { name: string; toJSON: () => unknown };
@@ -250,13 +250,13 @@ export async function startBot() {
 
     setInterval(async () => {
       try {
-        const due = await prisma.reminder.findMany({ where: { sent: false, dueAt: { lte: new Date() } } });
+        const due = await prisma.botReminder.findMany({ where: { sent: false, dueAt: { lte: new Date() } } });
         for (const r of due) {
           const user = await client.users.fetch(r.discordId).catch(() => null);
           if (user) {
             await user.send(`⏰ **Rappel** : ${r.content}`);
           }
-          await prisma.reminder.update({ where: { id: r.id }, data: { sent: true } });
+          await prisma.botReminder.update({ where: { id: r.id }, data: { sent: true } });
         }
       } catch {}
     }, 60 * 1000);
@@ -284,7 +284,7 @@ export async function startBot() {
       const catName = category.charAt(0).toUpperCase() + category.slice(1);
       await interaction.deferUpdate().catch(() => {});
       try {
-        const existing = await prisma.ticket.findFirst({ where: { userId: interaction.user.id, status: "open" } });
+        const existing = await prisma.botTicket.findFirst({ where: { userId: interaction.user.id, status: "open" } });
         if (existing) {
           return interaction.user.send("📌 Vous avez déjà un ticket ouvert.");
         }
@@ -314,7 +314,7 @@ export async function startBot() {
     if (!cmd) return;
 
     try {
-      const bl = await prisma.blacklist.findUnique({ where: { discordId: interaction.user.id } });
+      const bl = await prisma.botBlacklist.findUnique({ where: { discordId: interaction.user.id } });
       if (bl) {
         return interaction.reply({ content: "🚫 Vous êtes banni de l'utilisation du bot.", ephemeral: true });
       }
@@ -363,7 +363,7 @@ export async function startBot() {
       }
       return;
     }
-    const ticket = await prisma.ticket.findFirst({ where: { threadId: message.channel.id, status: "open" } });
+    const ticket = await prisma.botTicket.findFirst({ where: { threadId: message.channel.id, status: "open" } });
     if (ticket && message.content?.trim()) {
       await relayMessage(client, message.channel, message.author, message.content, false);
       return;

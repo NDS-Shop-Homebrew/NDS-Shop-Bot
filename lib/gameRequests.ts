@@ -1,11 +1,11 @@
 import type { Client, ThreadChannel } from "discord.js";
-import { GUILD_ID, CHANNELS, API_BASE_URL } from "../config.ts";
-import { norm, baseTitle } from "./norm.ts";
-import prisma from "./db.ts";
+import { GUILD_ID, CHANNELS, API_BASE_URL } from "../config.js";
+import { norm, baseTitle } from "./norm.js";
+import prisma from "./db.js";
 
 async function botLogSafe(msg: string) {
   try {
-    const { botLog } = await import("./botLog.ts");
+    const { botLog } = await import("./botLog.js");
     await botLog("info", msg);
   } catch {}
 }
@@ -135,7 +135,7 @@ export async function setRequestStatus(client: Client | null, threadId: string, 
 
 export async function handleThreadDelete(client: Client | null, thread: ThreadChannel) {
   try {
-    const deleted = await prisma.gameRequest.deleteMany({ where: { threadId: thread.id } });
+    const deleted = await prisma.botGameRequest.deleteMany({ where: { threadId: thread.id } });
     if (deleted.count > 0) await botLogSafe(`Demande supprimée (post retiré) : ${thread.name}`);
   } catch {}
 }

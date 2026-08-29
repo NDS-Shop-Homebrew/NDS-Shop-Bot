@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
-import prisma from "../lib/db.ts";
-import { botLog } from "../lib/botLog.ts";
+import prisma from "../lib/db.js";
+import { botLog } from "../lib/botLog.js";
 
 function parseDuration(s: string): number | null {
   const re = /(\d+)([smhd])/g;
@@ -29,7 +29,7 @@ export default {
       return interaction.reply("⚠️ Durée invalide. Formats : `30m`, `1h30m`, `2d`, `90s` (minimum 10s).");
     }
     const dueAt = new Date(Date.now() + ms);
-    await prisma.reminder.create({
+    await prisma.botReminder.create({
       data: { discordId: interaction.user.id, content: message, channelId: interaction.channelId, dueAt },
     });
     await botLog("info", `Rappel créé pour ${interaction.user.tag} dans ${timeStr}`);

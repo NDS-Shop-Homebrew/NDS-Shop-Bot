@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { recordOutgoing } from "../lib/dm.ts";
-import { botLog } from "../lib/botLog.ts";
+import { recordOutgoing } from "../lib/dm.js";
+import { botLog } from "../lib/botLog.js";
 
 export default {
   data: new SlashCommandBuilder()

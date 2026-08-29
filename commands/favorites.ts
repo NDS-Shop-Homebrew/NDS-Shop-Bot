@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from "discord.js";
-import { listGames } from "../lib/api.ts";
-import prisma from "../lib/db.ts";
-import { T, detectLang } from "../lib/lang.ts";
+import { listGames } from "../lib/api.js";
+import prisma from "../lib/db.js";
+import { T, detectLang } from "../lib/lang.js";
 
 function parse(arr: string | null | undefined): string[] {
   try {
@@ -42,7 +42,7 @@ export default {
     const user = interaction.user;
 
     if (sub === "list") {
-      const p = await prisma.userProfile.findUnique({ where: { discordId: user.id } });
+      const p = await prisma.botUserProfile.findUnique({ where: { discordId: user.id } });
       const favs = parse(p?.favorites);
       if (!favs.length) {
         return interaction.reply(lang === "fr" ? "Aucun favori. Utilisez /favorites add <jeu>" : "No favorites. Use /favorites add <game>");
@@ -59,7 +59,7 @@ export default {
     const g = games.find((x) => x.title.toLowerCase() === game.toLowerCase()) || games.find((x) => x.title.toLowerCase().includes(game.toLowerCase()));
     if (!g) return interaction.reply(t.gameNotFound(game));
 
-    const p = await prisma.userProfile.upsert({
+    const p = await prisma.botUserProfile.upsert({
       where: { discordId: user.id },
       update: {},
       create: { discordId: user.id, xp: 0, level: 1, totalMsgs: 0 },
@@ -73,7 +73,7 @@ export default {
       if (!favs.includes(g.title)) return interaction.reply(`${g.title} n'est pas en favori.`);
       favs = favs.filter((f) => f !== g.title);
     }
-    await prisma.userProfile.update({ where: { discordId: user.id }, data: { favorites: JSON.stringify(favs) } });
+    await prisma.botUserProfile.update({ where: { discordId: user.id }, data: { favorites: JSON.stringify(favs) } });
     await interaction.reply(`${sub === "add" ? "⭐ Ajouté" : "🗑️ Retiré"} : **${g.title}**`);
   },
 };

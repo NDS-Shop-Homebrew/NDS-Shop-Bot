@@ -4,3 +4,4 @@ frontend/dist/
 prisma/dev.db
 prisma/migrations/dev/
 *.log
+dist/

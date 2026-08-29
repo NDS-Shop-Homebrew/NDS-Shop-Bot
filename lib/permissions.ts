@@ -1,6 +1,6 @@
 import type { GuildMember } from "discord.js";
-import prisma from "./db.ts";
-import { botLog } from "./botLog.ts";
+import prisma from "./db.js";
+import { botLog } from "./botLog.js";
 
 export const ROLE_ORDER = ["@everyone", "Member", "Contributor", "Tester", "Developer", "Moderator", "Admin"];
 

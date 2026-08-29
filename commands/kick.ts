@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction, type GuildMember } from "discord.js";
-import { botLog } from "../lib/botLog.ts";
+import { botLog } from "../lib/botLog.js";
 
 const base = (name: string, desc: string) => new SlashCommandBuilder().setName(name).setDescription(desc);
 

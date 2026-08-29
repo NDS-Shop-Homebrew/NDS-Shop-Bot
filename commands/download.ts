@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, type ChatInputCommandInteraction, type AutocompleteInteraction } from "discord.js";
-import { listGames } from "../lib/api.ts";
-import { API_BASE_URL } from "../config.ts";
-import { T, detectLang } from "../lib/lang.ts";
+import { listGames } from "../lib/api.js";
+import { API_BASE_URL } from "../config.js";
+import { T, detectLang } from "../lib/lang.js";
 
 export default {
   data: new SlashCommandBuilder()

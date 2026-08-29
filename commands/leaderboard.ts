@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { API_BASE_URL } from "../config.ts";
-import prisma from "../lib/db.ts";
-import { detectLang } from "../lib/lang.ts";
+import { API_BASE_URL } from "../config.js";
+import prisma from "../lib/db.js";
+import { detectLang } from "../lib/lang.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -10,7 +10,7 @@ export default {
 
   async execute(interaction: ChatInputCommandInteraction) {
     const lang = detectLang(interaction.member);
-    const top = await prisma.userProfile.findMany({
+    const top = await prisma.botUserProfile.findMany({
       orderBy: { xp: "desc" },
       take: 10,
     });

@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
-import prisma from "../lib/db.ts";
-import { botLog } from "../lib/botLog.ts";
+import prisma from "../lib/db.js";
+import { botLog } from "../lib/botLog.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -17,7 +17,7 @@ export default {
     if (sub === "add") {
       const target = interaction.options.getUser("user")!;
       const reason = interaction.options.getString("reason") || "Aucune raison";
-      await prisma.blacklist.upsert({
+      await prisma.botBlacklist.upsert({
         where: { discordId: target.id },
         update: { reason },
         create: { discordId: target.id, reason },
@@ -26,10 +26,10 @@ export default {
       await interaction.reply({ content: `🚫 ${target.username} banni du bot.`, ephemeral: true });
     } else if (sub === "remove") {
       const target = interaction.options.getUser("user")!;
-      await prisma.blacklist.delete({ where: { discordId: target.id } }).catch(() => {});
+      await prisma.botBlacklist.delete({ where: { discordId: target.id } }).catch(() => {});
       await interaction.reply({ content: `✅ ${target.username} débanni du bot.`, ephemeral: true });
     } else {
-      const list = await prisma.blacklist.findMany();
+      const list = await prisma.botBlacklist.findMany();
       await interaction.reply(list.length ? list.map((b) => `<@${b.discordId}> — ${b.reason || ""}`).join("\n") : "Aucun banni.");
     }
   },

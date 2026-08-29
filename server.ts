@@ -1,8 +1,8 @@
 import "dotenv/config";
-import { startBot, pollNewGames, refreshGamesCache } from "./index.ts";
-import { createDashboard } from "./dashboard.ts";
-import { PORT } from "./config.ts";
-import { botLog } from "./lib/botLog.ts";
+import { startBot, pollNewGames, refreshGamesCache } from "./index.js";
+import { createDashboard } from "./dashboard.js";
+import { PORT } from "./config.js";
+import { botLog } from "./lib/botLog.js";
 import type { Client } from "discord.js";
 
 declare module "discord.js" {

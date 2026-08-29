@@ -7,9 +7,9 @@ import {
   type TextBasedChannel,
   type User,
 } from "discord.js";
-import prisma from "./db.ts";
-import { botLog } from "./botLog.ts";
-import { GUILD_ID, CHANNELS } from "../config.ts";
+import prisma from "./db.js";
+import { botLog } from "./botLog.js";
+import { GUILD_ID, CHANNELS } from "../config.js";
 
 export const CATEGORIES = ["Support", "Bug", "Suggestion", "Recrutement"];
 export const TICKETS_CATEGORY = "🎫 TICKETS";
@@ -44,7 +44,7 @@ export async function createTicket(client: Client | null, user: User, category: 
     return null;
   }
 
-  const ticket = await prisma.ticket.create({
+  const ticket = await prisma.botTicket.create({
     data: { userId: user.id, username: user.username, category, status: "open" },
   });
 
@@ -61,7 +61,7 @@ export async function createTicket(client: Client | null, user: User, category: 
     if (r) await thread.permissionOverwrites.create(r, { ViewChannel: true });
   }
 
-  await prisma.ticket.update({ where: { id: ticket.id }, data: { threadId: thread.id } });
+  await prisma.botTicket.update({ where: { id: ticket.id }, data: { threadId: thread.id } });
 
   await thread.send({
     embeds: [
@@ -91,11 +91,11 @@ export async function relayMessage(
 ) {
   try {
     const ticket = fromUser
-      ? await prisma.ticket.findFirst({ where: { userId: author.id, status: "open" } })
-      : await prisma.ticket.findFirst({ where: { threadId: channel.id, status: "open" } });
+      ? await prisma.botTicket.findFirst({ where: { userId: author.id, status: "open" } })
+      : await prisma.botTicket.findFirst({ where: { threadId: channel.id, status: "open" } });
     if (!ticket) return false;
 
-    await prisma.ticketMessage.create({
+    await prisma.botTicketMessage.create({
       data: {
         ticketId: ticket.id,
         authorId: author.id,
@@ -125,7 +125,7 @@ export async function relayMessage(
 }
 
 export async function closeTicket(client: Client | null, ticketId: string, by?: string) {
-  const ticket = await prisma.ticket.update({
+  const ticket = await prisma.botTicket.update({
     where: { id: ticketId },
     data: { status: "closed", closedAt: new Date() },
   });

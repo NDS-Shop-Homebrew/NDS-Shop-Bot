@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { API_BASE_URL } from "../config.ts";
+import { API_BASE_URL } from "../config.js";
 
 export interface GameForEmbed {
   title?: string;

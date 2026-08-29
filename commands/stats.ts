@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { T, detectLang } from "../lib/lang.ts";
-import { API_BASE_URL } from "../config.ts";
+import { T, detectLang } from "../lib/lang.js";
+import { API_BASE_URL } from "../config.js";
 
 export default {
   data: new SlashCommandBuilder().setName("stats").setDescription("Statistiques du catalogue / Catalog stats"),
@@ -12,7 +12,7 @@ export default {
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/stats`, { signal: AbortSignal.timeout(8000) });
-      const s = await res.json();
+      const s = (await res.json()) as { systems?: Record<string, number>; games: number; lastUpdated?: string };
       const sysCount = Object.keys(s.systems || {}).length;
       const systems = Object.entries(s.systems || {})
         .map(([sys, n]) => `🕹️ **${sys}**: ${n} ${t.games}`)

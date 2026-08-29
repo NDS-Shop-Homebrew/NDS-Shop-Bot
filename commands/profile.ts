@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import prisma from "../lib/db.ts";
-import { T, detectLang } from "../lib/lang.ts";
+import prisma from "../lib/db.js";
+import { T, detectLang } from "../lib/lang.js";
 
 function parse(arr: string | null | undefined): string[] {
   try { return JSON.parse(arr || "[]"); } catch { return []; }
@@ -11,7 +11,7 @@ export default {
 
   async execute(interaction: ChatInputCommandInteraction) {
     const lang = detectLang(interaction.member);
-    const p = await prisma.userProfile.findUnique({ where: { discordId: interaction.user.id } });
+    const p = await prisma.botUserProfile.findUnique({ where: { discordId: interaction.user.id } });
     const favs = parse(p?.favorites);
     const watched = parse(p?.watched);
 

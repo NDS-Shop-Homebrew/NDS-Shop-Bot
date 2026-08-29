@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { teamIds, presence } from "../lib/api.ts";
-import { T, detectLang } from "../lib/lang.ts";
+import { teamIds, presence } from "../lib/api.js";
+import { T, detectLang } from "../lib/lang.js";
 
 const STATUS_EMOJI: Record<string, string> = { online: "🟢", idle: "🟡", dnd: "🔴", offline: "⚫" };
 

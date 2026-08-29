@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
-import prisma from "../lib/db.ts";
-import { botLog } from "../lib/botLog.ts";
+import prisma from "../lib/db.js";
+import { botLog } from "../lib/botLog.js";
 
 export default {
   data: new SlashCommandBuilder()

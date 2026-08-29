@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { reloadMatrix } from "../lib/permissions.ts";
-import { botLog } from "../lib/botLog.ts";
+import { reloadMatrix } from "../lib/permissions.js";
+import { botLog } from "../lib/botLog.js";
 
 export default {
   data: new SlashCommandBuilder().setName("reload").setDescription("Recharger la config (permissions) / Reload config"),

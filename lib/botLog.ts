@@ -1,4 +1,4 @@
-import prisma from "./db.ts";
+import prisma from "./db.js";
 
 export async function botLog(level: string, message: string) {
   try {

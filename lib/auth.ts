@@ -3,7 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { username, admin } from "better-auth/plugins";
 import { createAccessControl } from "better-auth/plugins/access";
 import bcrypt from "bcrypt";
-import prisma from "./db.ts";
+import prisma from "./db.js";
 
 const statement = {
   user: ["create", "list", "set-role", "ban", "impersonate", "delete", "set-password", "get", "update"],

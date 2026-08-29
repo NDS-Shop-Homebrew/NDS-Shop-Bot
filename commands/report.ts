@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { CHANNELS } from "../config.ts";
-import { T, detectLang } from "../lib/lang.ts";
+import { CHANNELS } from "../config.js";
+import { T, detectLang } from "../lib/lang.js";
 
 export default {
   data: new SlashCommandBuilder()

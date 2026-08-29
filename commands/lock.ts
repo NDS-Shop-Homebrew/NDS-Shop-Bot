@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { botLog } from "../lib/botLog.ts";
+import { botLog } from "../lib/botLog.js";
 
 export default {
   data: new SlashCommandBuilder().setName("lock").setDescription("Verrouiller le salon / Lock the channel"),

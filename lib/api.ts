@@ -1,11 +1,11 @@
-import { API_BASE_URL } from "../config.ts";
+import { API_BASE_URL } from "../config.js";
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 export async function listGames(): Promise<Game[]> {

@@ -1,5 +1,5 @@
 import type { Client, GuildMember } from "discord.js";
-import { GUILD_ID } from "../config.ts";
+import { GUILD_ID } from "../config.js";
 
 let membersCache: { id: string; username: string; display: string }[] | null = null;
 let membersCacheAt = 0;

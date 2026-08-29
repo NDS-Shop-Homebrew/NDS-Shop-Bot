@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import prisma from "../lib/db.ts";
-import { closeTicket } from "../lib/tickets.ts";
-import { botLog } from "../lib/botLog.ts";
-import { detectLang } from "../lib/lang.ts";
+import prisma from "../lib/db.js";
+import { closeTicket } from "../lib/tickets.js";
+import { botLog } from "../lib/botLog.js";
+import { detectLang } from "../lib/lang.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -17,7 +17,7 @@ export default {
     const lang = detectLang(interaction.member);
 
     if (sub === "list") {
-      const open = await prisma.ticket.findMany({ where: { status: "open" }, orderBy: { createdAt: "desc" } });
+      const open = await prisma.botTicket.findMany({ where: { status: "open" }, orderBy: { createdAt: "desc" } });
       if (!open.length) {
         return interaction.reply(lang === "fr" ? "Aucun ticket ouvert." : "No open tickets.");
       }
@@ -34,7 +34,7 @@ export default {
 
     const id = interaction.options.getString("id")!;
     if (!id) return interaction.reply("Utilisez : /tickets list pour voir les IDs.");
-    const ticket = await prisma.ticket.findUnique({ where: { id } });
+    const ticket = await prisma.botTicket.findUnique({ where: { id } });
     if (!ticket) return interaction.reply("Ticket introuvable.");
 
     if (sub === "close") {
@@ -43,7 +43,7 @@ export default {
       return interaction.reply(`🔒 Ticket ${id} fermé.`);
     }
     if (sub === "reopen") {
-      await prisma.ticket.update({ where: { id }, data: { status: "open", closedAt: null } });
+      await prisma.botTicket.update({ where: { id }, data: { status: "open", closedAt: null } });
       await interaction.reply(`🔓 Ticket ${id} rouvert.`);
     }
   },

@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction, type Client } from "discord.js";
-import prisma from "../lib/db.ts";
-import { botLog } from "../lib/botLog.ts";
-import { GUILD_ID, CHANNELS } from "../config.ts";
+import prisma from "../lib/db.js";
+import { botLog } from "../lib/botLog.js";
+import { GUILD_ID, CHANNELS } from "../config.js";
 
 async function modLog(client: Client, message: string) {
   const guild = client.guilds.cache.get(GUILD_ID);
@@ -19,10 +19,10 @@ export default {
   async execute(interaction: ChatInputCommandInteraction) {
     const target = interaction.options.getUser("user")!;
     const reason = interaction.options.getString("reason") || "Aucune raison";
-    await prisma.warn.create({
+    await prisma.botWarn.create({
       data: { discordId: target.id, modId: interaction.user.id, reason },
     });
-    const count = await prisma.warn.count({ where: { discordId: target.id } });
+    const count = await prisma.botWarn.count({ where: { discordId: target.id } });
     await target.send(`⚠️ Vous avez reçu un avertissement sur NDS-Shop.\n**Raison** : ${reason}\n**Total** : ${count} avertissement(s)`).catch(() => {});
     await botLog("warn", `${interaction.user.tag} a warn ${target.username} (${count}): ${reason}`);
     await modLog(interaction.client, `${interaction.user.tag} ⚠️ warn **${target.username}** (${count}) — ${reason}`);

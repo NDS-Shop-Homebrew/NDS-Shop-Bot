@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { detectLang } from "../lib/lang.ts";
-import { API_BASE_URL } from "../config.ts";
+import { detectLang } from "../lib/lang.js";
+import { API_BASE_URL } from "../config.js";
 
 export default {
   data: new SlashCommandBuilder().setName("help").setDescription("Aide / Help"),

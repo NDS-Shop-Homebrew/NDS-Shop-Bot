@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import prisma from "../lib/db.ts";
-import { xpForLevel } from "../lib/leveling.ts";
-import { T, detectLang } from "../lib/lang.ts";
+import prisma from "../lib/db.js";
+import { xpForLevel } from "../lib/leveling.js";
+import { T, detectLang } from "../lib/lang.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -11,7 +11,7 @@ export default {
   async execute(interaction: ChatInputCommandInteraction) {
     const lang = detectLang(interaction.member);
     const t = T[lang];
-    const profile = await prisma.userProfile.findUnique({
+    const profile = await prisma.botUserProfile.findUnique({
       where: { discordId: interaction.user.id },
     });
     if (!profile) {

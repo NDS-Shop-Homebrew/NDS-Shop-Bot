@@ -1,6 +1,6 @@
 import type { Guild, Role } from "discord.js";
-import prisma from "./db.ts";
-import { botLog } from "./botLog.ts";
+import prisma from "./db.js";
+import { botLog } from "./botLog.js";
 
 const DEFAULT_CONFIG = {
   enabled: true,
@@ -25,7 +25,7 @@ export async function grantXp(discordId: string, guild: Guild | null) {
   const cfg = await getConfig();
   if (!cfg.enabled) return null;
 
-  const profile = await prisma.userProfile.upsert({
+  const profile = await prisma.botUserProfile.upsert({
     where: { discordId },
     update: {},
     create: { discordId, xp: 0, level: 1, totalMsgs: 0 },
@@ -39,7 +39,7 @@ export async function grantXp(discordId: string, guild: Guild | null) {
   const newLevel = Math.floor(1 + Math.sqrt(newXp / 100));
   const leveledUp = newLevel > profile.level;
 
-  await prisma.userProfile.update({
+  await prisma.botUserProfile.update({
     where: { discordId },
     data: { xp: newXp, level: newLevel, totalMsgs: profile.totalMsgs + 1, lastXpAt: new Date() },
   });

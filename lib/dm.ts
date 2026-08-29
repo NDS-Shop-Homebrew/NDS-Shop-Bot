@@ -1,5 +1,5 @@
 import type { User } from "discord.js";
-import prisma from "./db.ts";
+import prisma from "./db.js";
 
 interface Contact {
   id: string;

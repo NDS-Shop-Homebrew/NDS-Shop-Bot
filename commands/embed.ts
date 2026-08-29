@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { GUILD_ID } from "../config.ts";
-import { botLog } from "../lib/botLog.ts";
+import { GUILD_ID } from "../config.js";
+import { botLog } from "../lib/botLog.js";
 
 export default {
   data: new SlashCommandBuilder()

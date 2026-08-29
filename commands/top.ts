@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { listGames } from "../lib/api.ts";
-import { API_BASE_URL } from "../config.ts";
-import prisma from "../lib/db.ts";
-import { detectLang } from "../lib/lang.ts";
+import { listGames } from "../lib/api.js";
+import { API_BASE_URL } from "../config.js";
+import prisma from "../lib/db.js";
+import { detectLang } from "../lib/lang.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -11,7 +11,7 @@ export default {
 
   async execute(interaction: ChatInputCommandInteraction) {
     const lang = detectLang(interaction.member);
-    const profiles = await prisma.userProfile.findMany({ select: { favorites: true } });
+    const profiles = await prisma.botUserProfile.findMany({ select: { favorites: true } });
     const counts: Record<string, number> = {};
     for (const p of profiles) {
       try {

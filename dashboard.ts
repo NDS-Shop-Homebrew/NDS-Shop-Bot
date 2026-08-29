@@ -3,17 +3,17 @@ import path from "node:path";
 import express, { type Request, type Response, type NextFunction } from "express";
 import { ChannelType, type Client, type Guild, type GuildChannel, type NonThreadGuildBasedChannel, type TextBasedChannel } from "discord.js";
 import { toNodeHandler, fromNodeHeaders } from "better-auth/node";
-import { auth } from "./lib/auth.ts";
-import prisma from "./lib/db.ts";
-import { botLog } from "./lib/botLog.ts";
-import { listGames } from "./lib/api.ts";
-import { GUILD_ID, CHANNELS } from "./config.ts";
-import { resolveMentions, getGuildMembers } from "./lib/mentions.ts";
-import { getGamesCache } from "./index.ts";
-import { setRequestStatus } from "./lib/gameRequests.ts";
-import { closeTicket } from "./lib/tickets.ts";
-import { listContacts, thread as getThread, markRead, recordOutgoing } from "./lib/dm.ts";
-import { getMatrix, reloadMatrix, saveMatrix, ROLE_ORDER } from "./lib/permissions.ts";
+import { auth } from "./lib/auth.js";
+import prisma from "./lib/db.js";
+import { botLog } from "./lib/botLog.js";
+import { listGames } from "./lib/api.js";
+import { GUILD_ID, CHANNELS } from "./config.js";
+import { resolveMentions, getGuildMembers } from "./lib/mentions.js";
+import { getGamesCache } from "./index.js";
+import { setRequestStatus } from "./lib/gameRequests.js";
+import { closeTicket } from "./lib/tickets.js";
+import { listContacts, thread as getThread, markRead, recordOutgoing } from "./lib/dm.js";
+import { getMatrix, reloadMatrix, saveMatrix, ROLE_ORDER } from "./lib/permissions.js";
 
 const param = (req: Request, name: string) => String(req.params[name]);
 
@@ -253,7 +253,7 @@ where: { id: param(req, "id") },
   app.get("/api/tickets", requireAdmin, async (req, res) => {
     const status = req.query.status || "all";
     const where = status === "all" ? {} : { status: String(status) };
-    const tickets = await prisma.ticket.findMany({
+    const tickets = await prisma.botTicket.findMany({
       where,
       orderBy: { createdAt: "desc" },
       include: { messages: { orderBy: { createdAt: "asc" }, take: 50 } },
@@ -264,10 +264,10 @@ where: { id: param(req, "id") },
   app.post("/api/tickets/:id/reply", requireAdmin, async (req, res) => {
     const { content } = req.body;
     if (!content) return res.status(400).json({ error: "content requis" });
-    const ticket = await prisma.ticket.findUnique({ where: { id: param(req, "id") } });
+    const ticket = await prisma.botTicket.findUnique({ where: { id: param(req, "id") } });
     if (!ticket) return res.status(404).json({ error: "Ticket introuvable" });
     const user = (req as AuthRequest).user!;
-    await prisma.ticketMessage.create({
+    await prisma.botTicketMessage.create({
       data: { ticketId: ticket.id, authorId: user.id, author: user.username, content, direction: "staff" },
     });
     const member = await client?.users?.fetch(ticket.userId).catch(() => null);
@@ -282,14 +282,14 @@ where: { id: param(req, "id") },
   });
 
   app.post("/api/tickets/:id/reopen", requireAdmin, async (req, res) => {
-    await prisma.ticket.update({ where: { id: param(req, "id") }, data: { status: "open", closedAt: null } });
+    await prisma.botTicket.update({ where: { id: param(req, "id") }, data: { status: "open", closedAt: null } });
     res.json({ ok: true });
   });
 
   app.get("/api/users", requireAdmin, async (req, res) => {
     const search = String(req.query.search || "").toLowerCase();
     const limit = Math.min(Number(req.query.limit || 100), 200);
-    const profiles = await prisma.userProfile.findMany({ orderBy: { xp: "desc" }, take: limit });
+    const profiles = await prisma.botUserProfile.findMany({ orderBy: { xp: "desc" }, take: limit });
     const members = await getGuildMembers(client);
     const out: { discordId: string; username: string; xp: number; level: number; totalMsgs: number; favorites: string[] }[] = [];
     for (const p of profiles) {
@@ -345,13 +345,13 @@ where: { id: param(req, "id") },
   });
 
   app.get("/api/blacklist", requireAdmin, async (_req, res) => {
-    res.json(await prisma.blacklist.findMany({ orderBy: { createdAt: "desc" } }));
+    res.json(await prisma.botBlacklist.findMany({ orderBy: { createdAt: "desc" } }));
   });
 
   app.post("/api/blacklist", requireAdmin, async (req, res) => {
     const { discordId, reason } = req.body;
     if (!discordId) return res.status(400).json({ error: "discordId requis" });
-    await prisma.blacklist.upsert({
+    await prisma.botBlacklist.upsert({
       where: { discordId },
       update: { reason: reason || null },
       create: { discordId, reason: reason || null },
@@ -360,7 +360,7 @@ where: { id: param(req, "id") },
   });
 
   app.delete("/api/blacklist/:discordId", requireSuperAdmin, async (req, res) => {
-    await prisma.blacklist.delete({ where: { discordId: param(req, "discordId") } }).catch(() => {});
+    await prisma.botBlacklist.delete({ where: { discordId: param(req, "discordId") } }).catch(() => {});
     res.json({ ok: true });
   });
 
@@ -369,7 +369,7 @@ where: { id: param(req, "id") },
     if (!discordId) return res.status(400).json({ error: "discordId requis" });
     const expiresAt = Number(days) > 0 ? new Date(Date.now() + Number(days) * 86400000) : null;
     const user = (req as AuthRequest).user!;
-    await prisma.warn.create({
+    await prisma.botWarn.create({
       data: { discordId, modId: user.id, reason: reason || "Avertissement dashboard", expiresAt },
     });
     await botLog("warn", `${user.username} a warn ${discordId}: ${reason}${expiresAt ? ` (${days}j)` : ""}`);
@@ -378,7 +378,7 @@ where: { id: param(req, "id") },
     try {
       const cfg = await prisma.botSetting.findUnique({ where: { key: "warnConfig" } });
       const wc = cfg?.value ? JSON.parse(cfg.value) : { max: 3, action: "kick" };
-      activeWarns = await prisma.warn.count({ where: { discordId, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] } });
+      activeWarns = await prisma.botWarn.count({ where: { discordId, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] } });
       if (wc.max > 0 && activeWarns >= wc.max) action = wc.action;
     } catch {}
     res.json({ ok: true, activeWarns, action });
@@ -436,14 +436,14 @@ where: { id: param(req, "id") },
   app.get("/api/warns", requireAdmin, async (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.json([]);
-    const warns = await prisma.warn.findMany({ where: { discordId: String(userId) }, orderBy: { createdAt: "desc" } });
+    const warns = await prisma.botWarn.findMany({ where: { discordId: String(userId) }, orderBy: { createdAt: "desc" } });
     res.json(warns);
   });
 
   app.get("/api/tickets/all", requireAdmin, async (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.json([]);
-    const tickets = await prisma.ticket.findMany({ where: { userId: String(userId) }, orderBy: { createdAt: "desc" } });
+    const tickets = await prisma.botTicket.findMany({ where: { userId: String(userId) }, orderBy: { createdAt: "desc" } });
     res.json(tickets);
   });
 
@@ -464,10 +464,10 @@ where: { id: param(req, "id") },
 
   app.get("/api/tickets/stats", requireAdmin, async (_req, res) => {
     const [open, closed] = await Promise.all([
-      prisma.ticket.count({ where: { status: "open" } }),
-      prisma.ticket.count({ where: { status: "closed" } }),
+      prisma.botTicket.count({ where: { status: "open" } }),
+      prisma.botTicket.count({ where: { status: "closed" } }),
     ]);
-    const byCat = await prisma.ticket.groupBy({ by: ["category"], _count: { _all: true } });
+    const byCat = await prisma.botTicket.groupBy({ by: ["category"], _count: { _all: true } });
     res.json({ open, closed, total: open + closed, byCategory: byCat });
   });
 
@@ -505,7 +505,7 @@ where: { id: param(req, "id") },
     try {
       const { status } = req.query;
       const where = status ? { status: String(status) } : {};
-      const rows = await prisma.gameRequest.findMany({ where, orderBy: { createdAt: "desc" } });
+      const rows = await prisma.botGameRequest.findMany({ where, orderBy: { createdAt: "desc" } });
 
       const forum = client?.guilds?.cache.get(GUILD_ID)?.channels.cache.find((c) => c.name === CHANNELS.gameRequests);
       const forumId = forum?.id || null;
@@ -551,7 +551,7 @@ where: { id: param(req, "id") },
       const threadId = param(req, "threadId");
       const ch = await client?.channels.fetch(threadId).catch(() => null);
       await (ch as import("discord.js").GuildChannel | null)?.delete().catch(() => {});
-      await prisma.gameRequest.deleteMany({ where: { threadId } });
+      await prisma.botGameRequest.deleteMany({ where: { threadId } });
       res.json({ ok: true });
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
