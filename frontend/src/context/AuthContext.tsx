@@ -1,11 +1,18 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { api, logout } from "../lib/api";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import { authClient } from "../lib/auth-client";
 
 interface SessionUser {
   id: string;
   username: string;
-  email?: string;
   role: string;
+  email?: string;
 }
 
 interface AuthContextType {
@@ -18,60 +25,65 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
+const toSessionUser = (u: any): SessionUser | null =>
+  u ? { id: u.id, username: u.username ?? "", role: u.role ?? "member", email: u.email } : null;
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<SessionUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<AuthContextType["user"]>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    (async () => {
+    const verify = async () => {
       try {
-        const s = await api<{ user: SessionUser | null }>("/api/session");
-        if (s.user) {
+        const { data } = await authClient.getSession();
+        if (data?.session && data.user) {
           setIsAuthenticated(true);
-          setUser(s.user);
+          setUser(toSessionUser(data.user));
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
         }
       } catch {
+        setIsAuthenticated(false);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
-    })();
+    };
+    verify();
   }, []);
 
   const login = async (username: string, password: string) => {
-    const res = await fetch("/api/auth/sign-in/username", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password }),
+    const { error } = await authClient.signIn.username({
+      username,
+      password,
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.error) {
-      return { ok: false, message: data.message || data.error || "Identifiants incorrects" };
+    if (error) return { ok: false, message: error.message || "Identifiants incorrects" };
+    const { data } = await authClient.getSession();
+    if (data?.user) {
+      setIsAuthenticated(true);
+      setUser(toSessionUser(data.user));
+      navigate("/");
     }
-    try {
-      const s = await api<{ user: SessionUser | null }>("/api/session");
-      if (s.user) {
-        setIsAuthenticated(true);
-        setUser(s.user);
-      }
-    } catch {}
     return { ok: true };
   };
 
-  const doLogout = async () => {
-    await logout();
+  const logout = async () => {
+    await authClient.signOut();
     setIsAuthenticated(false);
     setUser(null);
+    navigate("/login");
   };
 
   const isAdmin = user?.role === "admin" || user?.role === "super-admin";
   const isSuperAdmin = user?.role === "super-admin";
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, isAdmin, isSuperAdmin, login, logout: doLogout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, isAdmin, isSuperAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

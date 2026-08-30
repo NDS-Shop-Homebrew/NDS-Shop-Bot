@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { UIProvider } from "./context/UIContext";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Overview from "./pages/Overview";
@@ -49,8 +49,6 @@ function ProtectedRoutes() {
 export default function App() {
   return (
     <UIProvider>
-      <AuthProvider>
-        <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route element={<ProtectedRoutes />}>
@@ -72,8 +70,6 @@ export default function App() {
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
     </UIProvider>
   );
 }
