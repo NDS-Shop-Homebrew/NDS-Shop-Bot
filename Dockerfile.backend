@@ -1,23 +1,40 @@
-# NDS-Shop-Bot/backend - Multi-stage build
+# NDS-Shop-Bot - Multi-stage build (backend + frontend)
+# @nds-shop-homebrew/prisma vient de GitHub Packages (npm privé)
+# Build: docker build --build-arg NPM_TOKEN=... --build-arg DATABASE_URL='mysql://...' .
 FROM node:22-alpine AS base
 WORKDIR /app
-RUN apk add --no-cache libc6-compat python3 make g++
+RUN apk add --no-cache libc6-compat python3 make g++ openssl
 
-FROM base AS deps
+# --- Backend deps & build (avec @nds-shop-homebrew/prisma du registry privé) ---
+FROM base AS backend
+WORKDIR /app
+ARG NPM_TOKEN
+ARG DATABASE_URL
+RUN echo "@nds-shop-homebrew:registry=https://npm.pkg.github.com/" > .npmrc && \
+    echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc
+ENV DATABASE_URL=${DATABASE_URL}
 COPY package.json package-lock.json* ./
 RUN npm ci
-
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM base AS runner
+# --- Frontend build ---
+FROM node:22-alpine AS frontend-build
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci
+COPY frontend .
+RUN npm run build
+
+# --- Runner ---
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/prisma ./prisma
+RUN apk add --no-cache libc6-compat
+COPY --from=backend /app/dist ./dist
+COPY --from=backend /app/node_modules ./node_modules
+COPY --from=backend /app/package.json ./
+COPY --from=backend /app/node_modules/@nds-shop-homebrew/prisma/generated ./node_modules/@nds-shop-homebrew/prisma/generated
+COPY --from=frontend-build /app/dist ./frontend/dist
+EXPOSE 3004
 CMD ["node", "dist/server.js"]
