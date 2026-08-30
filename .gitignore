@@ -1,6 +1,7 @@
 node_modules/
 frontend/dist/
 .env
+.env.production
 prisma/dev.db
 prisma/migrations/dev/
 *.log
